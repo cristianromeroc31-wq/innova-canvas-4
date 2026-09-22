@@ -1,0 +1,1337 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NÉVOA | Cocreación de modelos de negocio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Instrument+Sans:wght@400..700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --romero:#5F7A61; --romero-d:#435A46; --romero-s:#E3EADF;
+  --marfil:#FBF7EE; --marfil-2:#F3EDDF; --papel:#FFFDF8;
+  --dorado:#C29A45; --dorado-d:#8A6822; --dorado-s:#F3E6C4;
+  --grafito:#34383B; --grafito-2:#62676B; --linea:#DCD4C2;
+  --fd:'Bricolage Grotesque', 'Segoe UI', system-ui, sans-serif;
+  --fb:'Instrument Sans', 'Segoe UI', system-ui, sans-serif;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;height:100%}
+body{background:var(--marfil);color:var(--grafito);font:15px/1.5 var(--fb);-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--dorado);outline-offset:2px}
+a{color:var(--romero-d)}
+.muted{color:var(--grafito-2);font-size:13px}
+.lbl{display:block;font-size:12.5px;font-weight:600;color:var(--grafito-2);margin-bottom:4px}
+
+/* Botones */
+.btn{border:1.5px solid var(--grafito);background:transparent;padding:8px 14px;border-radius:3px;cursor:pointer;font-weight:600;font-size:14px;line-height:1.2}
+.btn:hover{background:var(--marfil-2)}
+.btn.primary{background:var(--romero);border-color:var(--romero);color:var(--papel)}
+.btn.primary:hover{background:var(--romero-d)}
+.btn.gold{background:var(--dorado);border-color:var(--dorado);color:var(--grafito)}
+.btn.gold:hover{background:#B38B38}
+.btn.ghost{border-color:var(--linea)}
+.btn.small{padding:5px 10px;font-size:13px}
+.btn.danger{border-color:#A4553F;color:#8C3F2B}
+.linkbtn{background:none;border:0;padding:0;color:var(--romero-d);text-decoration:underline;cursor:pointer;font-weight:600}
+input[type=text],input[type=url],input:not([type]),textarea,select{width:100%;border:1.5px solid var(--linea);background:var(--papel);border-radius:3px;padding:8px 10px}
+input:focus,textarea:focus,select:focus{border-color:var(--romero);outline:none}
+textarea{resize:vertical;min-height:70px}
+
+/* Glifo: el lienzo de nueve bloques en miniatura */
+.glyph{--s:10px;display:inline-grid;grid-template-columns:repeat(10,var(--s));grid-template-rows:var(--s) var(--s) calc(var(--s)*.8);gap:2px;
+  grid-template-areas:"a a b b p p r r s s" "a a c c p p n n s s" "o o o o o i i i i i";vertical-align:middle}
+.glyph i{background:var(--romero);border-radius:1px}
+.glyph i:nth-child(1){grid-area:a}.glyph i:nth-child(2){grid-area:b}.glyph i:nth-child(3){grid-area:c}
+.glyph i:nth-child(4){grid-area:p;background:var(--dorado)}.glyph i:nth-child(5){grid-area:r}.glyph i:nth-child(6){grid-area:n}
+.glyph i:nth-child(7){grid-area:s}.glyph i:nth-child(8){grid-area:o;opacity:.55}.glyph i:nth-child(9){grid-area:i;opacity:.55}
+
+/* Entrada */
+.login{min-height:100%;padding:48px 24px}
+.login-wrap{max-width:1040px;margin:0 auto}
+.hero{display:grid;grid-template-columns:auto 1fr;gap:28px;align-items:end;padding-bottom:28px;border-bottom:2px solid var(--grafito)}
+.hero .glyph{--s:22px;gap:4px}
+.wordmark{font-family:var(--fd);font-weight:800;font-size:clamp(64px,11vw,132px);line-height:.82;letter-spacing:-.035em;color:var(--romero-d);margin:0}
+.hero p{max-width:62ch;margin:14px 0 0;font-size:16.5px}
+.login-grid{display:grid;grid-template-columns:1.1fr 1fr;border:1.5px solid var(--linea);border-top:0;background:var(--papel)}
+.login-col{padding:26px 28px}
+.login-col+.login-col{border-left:1.5px solid var(--linea);background:var(--marfil-2)}
+.login-col h2{font-family:var(--fd);font-weight:700;font-size:21px;margin:0 0 4px;display:flex;gap:10px;align-items:baseline}
+.login-col h2 span{font-size:14px;color:var(--papel);background:var(--grafito);border-radius:50%;width:24px;height:24px;display:inline-grid;place-items:center;flex:none}
+.login-col .intro{margin:0 0 18px;color:var(--grafito-2);font-size:14px;max-width:48ch}
+.f{margin-bottom:12px}
+.frow{display:grid;grid-template-columns:1.3fr 1fr;gap:12px}
+.err{color:#8C3F2B;font-size:13.5px;min-height:20px;margin:4px 0}
+.creds-status{font-size:13.5px;margin-top:12px;padding:10px 12px;border-left:3px solid var(--linea);background:var(--papel)}
+.creds-status.ok{border-color:var(--romero)} .creds-status.bad{border-color:var(--dorado)}
+
+/* App */
+.app{height:100vh;display:flex;flex-direction:column}
+.topbar{display:flex;align-items:center;gap:18px;padding:10px 18px;background:var(--grafito);color:var(--marfil)}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--fd);font-weight:800;font-size:22px;letter-spacing:-.02em}
+.brand .glyph{--s:5px;gap:1px}
+.brand .glyph i{background:var(--romero-s)}
+.brand .glyph i:nth-child(4){background:var(--dorado)}
+.roominfo{font-size:13.5px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.roominfo b{font-weight:700;letter-spacing:.02em}
+.conn{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#D8D3C6}
+.conn::before{content:"";width:8px;height:8px;border-radius:50%;background:#8A8F92}
+.conn.live::before{background:#8FBF8F} .conn.connecting::before{background:var(--dorado)} .conn.error::before{background:#D98A6C}
+.people{margin-left:auto;display:flex;gap:4px;align-items:center}
+.people .lbl{color:#C9C4B7;margin:0 6px 0 0;font-weight:500}
+.av{width:28px;height:28px;border-radius:50%;display:inline-grid;place-items:center;font-size:11.5px;font-weight:700;color:var(--papel);background:var(--c,var(--romero));border:2px solid var(--grafito);flex:none}
+.av.sm{width:20px;height:20px;font-size:9px;border-width:0}
+
+.toolbar{display:flex;flex-wrap:wrap;gap:14px 22px;align-items:flex-end;padding:12px 18px;border-bottom:1.5px solid var(--linea);background:var(--papel)}
+.model{min-width:260px;flex:1 1 280px;max-width:420px}
+.model input{font-family:var(--fd);font-weight:700;font-size:19px;border:0;border-bottom:2px solid var(--grafito);border-radius:0;background:transparent;padding:2px 0}
+.seg{display:inline-flex;border:1.5px solid var(--grafito);border-radius:3px;overflow:hidden}
+.seg button{border:0;background:transparent;padding:7px 12px;cursor:pointer;font-weight:600;font-size:13.5px;white-space:nowrap}
+.seg button+button{border-left:1.5px solid var(--grafito)}
+.seg button.on{background:var(--grafito);color:var(--marfil)}
+.stages button{padding:8px 16px;font-size:14.5px}
+.stages button.on{background:var(--romero);color:var(--papel)}
+.stages .n{display:inline-grid;place-items:center;width:19px;height:19px;border-radius:50%;border:1.5px solid currentColor;font-size:11px;margin-right:6px}
+.stages em{font-style:normal;font-size:12px;opacity:.75;margin-left:6px}
+.seg.small{border-width:1.5px}
+.seg.small button{padding:5px 10px;font-size:13px}
+.counts{font-size:13px;color:var(--grafito-2);margin-left:auto;text-align:right}
+
+.stagebar{display:flex;gap:16px;align-items:center;padding:9px 18px;background:var(--romero-s);border-bottom:1.5px solid var(--linea);font-size:14px}
+.stagebar p{margin:0;max-width:110ch}
+.stagebar b{color:var(--romero-d)}
+.stagebar .acts{margin-left:auto;display:flex;gap:8px;flex:none}
+.stagebar.linking{background:var(--dorado-s)}
+.stagebar.done{background:var(--dorado-s)}
+
+.main{flex:1;min-height:0;display:grid;grid-template-columns:1fr 390px}
+.board-scroll{overflow:auto;padding:16px 18px 28px}
+.board{position:relative;min-width:960px;display:grid;gap:0;border:2px solid var(--grafito);background:var(--grafito);
+  grid-template-columns:repeat(10,1fr);grid-template-rows:minmax(200px,auto) minmax(200px,auto) minmax(150px,auto);
+  grid-template-areas:"ali ali act act pro pro rel rel seg seg" "ali ali rec rec pro pro can can seg seg" "cos cos cos cos cos ing ing ing ing ing"}
+.board.linking .chip{cursor:crosshair}
+.block{background:var(--papel);padding:10px 10px 12px;display:flex;flex-direction:column;min-width:0;margin:0 1.5px 1.5px 0}
+.block[data-block=aliados],.block[data-block=costos]{margin-left:0}
+.block[data-block=segmentos],.block[data-block=ingresos]{margin-right:0}
+.block[data-block=costos],.block[data-block=ingresos]{margin-bottom:0}
+.block.core{background:var(--romero);color:var(--papel)}
+.block.sel{box-shadow:inset 0 0 0 3px var(--dorado)}
+.block-head{display:flex;align-items:flex-start;gap:6px}
+.block-title{flex:1;text-align:left;background:none;border:0;padding:0;cursor:pointer;font-family:var(--fd);font-weight:700;font-size:15.5px;line-height:1.15}
+.block-title .n{display:inline-block;min-width:1.2em;color:var(--dorado-d);font-weight:800}
+.block.core .block-title .n{color:var(--dorado-s)}
+.block-hint{margin:3px 0 8px;font-size:12px;line-height:1.35;color:var(--grafito-2)}
+.block.core .block-hint{color:#DCE6D8}
+.tool{border:0;background:none;cursor:pointer;display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:700;color:var(--grafito-2);padding:2px 4px;border-radius:3px}
+.tool:hover{background:var(--marfil-2)}
+.block.core .tool{color:var(--papel)} .block.core .tool:hover{background:var(--romero-d)}
+.tool.add{font-size:20px;line-height:1;color:var(--dorado-d);padding:0 5px}
+.block.core .tool.add{color:var(--dorado-s)}
+.chips{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
+.chip{position:relative;z-index:1;display:flex;gap:6px;align-items:flex-start;background:var(--marfil);border:1px solid var(--linea);border-left:4px solid var(--c,var(--romero));padding:5px 7px;font-size:13.5px;line-height:1.3;cursor:pointer;color:var(--grafito)}
+.chip:hover{border-color:var(--grafito-2)}
+.chip.sel{outline:2px solid var(--dorado);outline-offset:1px}
+.chip.linked{background:var(--dorado-s)}
+.chip.from{outline:2px dashed var(--dorado-d)}
+.chip .t{flex:1;min-width:0;word-break:break-word}
+.chip.strong .t{font-weight:700}
+.chip .meta{display:flex;gap:3px;align-items:center;flex:none}
+.bdg{font-size:10.5px;font-weight:700;padding:1px 5px;border-radius:2px;line-height:1.5;white-space:nowrap}
+.bdg.f{background:var(--romero);color:var(--papel)} .bdg.d{background:var(--dorado);color:var(--grafito)}
+.bdg.sc{background:var(--marfil-2);color:var(--grafito)}
+.bdg.h1{border:1px solid var(--grafito-2);color:var(--grafito)} .bdg.h2{background:var(--dorado-s);color:var(--dorado-d);border:1px solid var(--dorado)} .bdg.h3{background:var(--romero-s);color:var(--romero-d);border:1px solid var(--romero)}
+.bdg.pr{background:var(--grafito);color:var(--marfil)}
+.bdg.rl{background:none;color:var(--dorado-d);padding:0 2px}
+.add-form{margin-top:6px}
+.add-form input{padding:6px 8px;font-size:13.5px}
+.empty-hint{font-size:12px;color:var(--grafito-2);font-style:italic}
+.block.core .empty-hint{color:#DCE6D8}
+.rel-svg{position:absolute;left:0;top:0;pointer-events:none;z-index:2;overflow:visible}
+.rel-line{fill:none;stroke:var(--dorado-d);stroke-width:2;stroke-linecap:round;opacity:.9}
+.rel-dot{fill:var(--dorado);stroke:var(--papel);stroke-width:2;pointer-events:all;cursor:pointer}
+.rel-tips{position:absolute;inset:0;pointer-events:none;z-index:3}
+.rel-tip{position:absolute;transform:translate(-50%,12px);max-width:230px;background:var(--grafito);color:var(--marfil);font-size:12.5px;line-height:1.35;padding:7px 9px;border-radius:3px}
+
+/* Panel lateral */
+.side{border-left:1.5px solid var(--linea);background:var(--papel);display:flex;flex-direction:column;min-height:0}
+.tabs{display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1.5px solid var(--grafito)}
+.tabs button{border:0;background:transparent;padding:11px 4px;cursor:pointer;font-weight:600;font-size:13.5px;position:relative}
+.tabs button+button{border-left:1px solid var(--linea)}
+.tabs button.on{background:var(--grafito);color:var(--marfil)}
+.tabs .dot{position:absolute;top:6px;right:8px;min-width:16px;height:16px;border-radius:8px;background:var(--dorado);color:var(--grafito);font-size:10px;display:grid;place-items:center;padding:0 3px}
+.pane{flex:1;min-height:0;overflow:auto;padding:16px 18px}
+.pane h3{font-family:var(--fd);font-weight:700;font-size:19px;line-height:1.2;margin:0 0 6px}
+.pane h4{font-family:var(--fd);font-weight:700;font-size:15px;margin:18px 0 6px}
+.pane .kicker{font-size:12.5px;color:var(--dorado-d);font-weight:700;margin-bottom:2px}
+.field{margin:12px 0}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.hr{border:0;border-top:1px solid var(--linea);margin:16px 0}
+.files{list-style:none;margin:6px 0;padding:0}
+.files li{display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--linea);font-size:13.5px}
+.files li a{flex:1;min-width:0;word-break:break-all}
+.files img{width:36px;height:36px;object-fit:cover;border:1px solid var(--linea)}
+.x{border:0;background:none;cursor:pointer;font-size:17px;color:var(--grafito-2);line-height:1}
+.rels{list-style:none;margin:6px 0;padding:0}
+.rels li{padding:8px 10px;border-left:3px solid var(--dorado);background:var(--marfil);margin-bottom:6px;font-size:13.5px}
+.rels li .who{font-weight:700}
+.howto{margin:10px 0 0;padding-left:20px}
+.howto li{margin-bottom:6px}
+
+.chat-pane{display:flex;flex-direction:column;padding:0}
+.chat-list{flex:1;overflow:auto;padding:14px 16px}
+.msg{display:flex;gap:9px;margin-bottom:12px}
+.msg .body{min-width:0}
+.msg .who{font-size:12.5px;color:var(--grafito-2)}
+.msg .who b{color:var(--grafito)}
+.msg p{margin:1px 0 0;white-space:pre-wrap;word-break:break-word}
+.msg.me .body p{background:var(--romero-s);padding:6px 9px;border-radius:3px}
+.composer{display:flex;gap:8px;padding:12px 14px;border-top:1.5px solid var(--linea);background:var(--marfil)}
+.filters{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
+.fchip{border:1.5px solid var(--linea);background:var(--papel);border-radius:99px;padding:3px 10px;font-size:12.5px;cursor:pointer;font-weight:600}
+.fchip.on{background:var(--romero);border-color:var(--romero);color:var(--papel)}
+.blog-form{border:1.5px solid var(--linea);padding:12px;background:var(--marfil);margin-bottom:14px}
+.blog-form > *+*{margin-top:8px}
+.post{border-top:2px solid var(--grafito);padding:12px 0 6px;margin-top:6px}
+.post .tag{font-size:12px;font-weight:700;color:var(--dorado-d)}
+.post h5{font-family:var(--fd);font-size:16px;margin:2px 0 4px}
+.post > p{margin:0 0 8px;white-space:pre-wrap}
+.post .who{font-size:12.5px;color:var(--grafito-2)}
+.comments{margin:8px 0 0 12px;padding-left:10px;border-left:2px solid var(--linea)}
+.comment{font-size:13.5px;margin-bottom:6px}
+.comment p{margin:0;white-space:pre-wrap}
+.reply{display:flex;gap:6px;margin-top:6px}
+.reply input{padding:5px 8px;font-size:13px}
+.summary{background:var(--romero-s);padding:10px 12px;margin-bottom:12px;font-size:13.5px}
+.summary ul{margin:4px 0 0;padding-left:18px}
+.guide-block{border-top:1px solid var(--linea);padding:10px 0}
+.guide-block button{background:none;border:0;padding:0;cursor:pointer;font-family:var(--fd);font-weight:700;font-size:15px;text-align:left}
+.guide-block.sel button{color:var(--dorado-d)}
+.guide-block ul{margin:6px 0 0;padding-left:18px}
+.guide-block li{margin-bottom:4px;font-size:14px}
+.objective{background:var(--grafito);color:var(--marfil);padding:12px 14px;margin-bottom:12px;font-size:14px}
+.objective b{color:var(--dorado-s)}
+.note{border-left:3px solid var(--dorado);padding:6px 10px;background:var(--marfil);font-size:13.5px;margin:10px 0}
+.linkbox{display:flex;gap:6px}
+.linkbox input{font-size:12.5px}
+.members{list-style:none;margin:6px 0;padding:0}
+.members li{display:flex;gap:8px;align-items:center;padding:5px 0;font-size:13.5px}
+.members .on{color:var(--romero-d);font-weight:700;font-size:12px}
+
+/* Ventanas */
+.modal{position:fixed;inset:0;background:rgba(52,56,59,.55);display:grid;place-items:center;padding:20px;z-index:50}
+.modal-card{background:var(--papel);max-width:560px;width:100%;max-height:90vh;overflow:auto;padding:22px 24px;border-top:6px solid var(--romero)}
+.modal-card.wide{max-width:760px}
+.modal-card h3{font-family:var(--fd);font-weight:800;font-size:24px;line-height:1.1;margin:0 0 8px}
+.modal-card pre{background:var(--grafito);color:var(--marfil);padding:12px;font-size:12px;overflow:auto;max-height:46vh;white-space:pre}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
+.check{display:flex;gap:10px;align-items:flex-start;margin:12px 0;font-size:14.5px}
+.check input{margin-top:4px;width:18px;height:18px;accent-color:var(--romero)}
+.stat-table{width:100%;border-collapse:collapse;font-size:14px;margin:8px 0}
+.stat-table th,.stat-table td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--linea)}
+.stat-table th{font-weight:600;color:var(--grafito-2)}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--grafito);color:var(--marfil);padding:10px 16px;border-radius:3px;font-size:14px;max-width:90vw;z-index:60;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.show{opacity:1}
+.toast.bad{background:#7A3B2A}
+
+@media (max-width:980px){
+  .app{height:auto;min-height:100vh}
+  .main{display:block}
+  .side{border-left:0;border-top:2px solid var(--grafito);height:75vh}
+  .login-grid,.hero{grid-template-columns:1fr}
+  .login-col+.login-col{border-left:0;border-top:1.5px solid var(--linea)}
+  .people .lbl{display:none}
+  .counts{margin-left:0;text-align:left}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<!-- ============ ENTRADA ============ -->
+<div id="login" class="login" hidden>
+  <div class="login-wrap">
+    <header class="hero">
+      <span class="glyph" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+      <div>
+        <h1 class="wordmark">NÉVOA</h1>
+        <p>Tablero de los nueve bloques de Osterwalder para que tu equipo describa, evalúe e innove su modelo de negocio al mismo tiempo, cada quien desde su computadora: elementos, relaciones argumentadas, chat, blog por bloque y archivos de apoyo. Complementa el trabajo presencial alrededor del tablero, en la línea del aplicativo SIMON.</p>
+      </div>
+    </header>
+    <div class="login-grid">
+      <form class="login-col" id="login-form" autocomplete="on">
+        <h2><span>1</span>Entra a la sala del equipo</h2>
+        <p class="intro">Todos los que usen el mismo código de sala trabajan sobre el mismo tablero.</p>
+        <div class="f"><label class="lbl" for="f-name">Tu nombre real</label><input id="f-name" maxlength="60" placeholder="Nombre y apellido"></div>
+        <div class="f"><label class="lbl" for="f-role">Tu rol en el ejercicio</label><input id="f-role" maxlength="40" placeholder="Ej. Mercadotecnia, finanzas, operaciones"></div>
+        <div class="frow">
+          <div class="f"><label class="lbl" for="f-room">Código de la sala</label><input id="f-room" maxlength="30" placeholder="Ej. EQUIPO-01"></div>
+          <div class="f"><label class="lbl" for="f-team">Equipo</label><input id="f-team" maxlength="40" placeholder="Ej. Equipo 3"></div>
+        </div>
+        <div class="f"><label class="lbl" for="f-model">Modelo de negocio que van a diseñar</label><input id="f-model" maxlength="80" placeholder="Ej. Hospitalización domiciliaria"></div>
+        <p class="err" id="login-err" role="alert"></p>
+        <button class="btn primary" type="submit">Entrar al tablero</button>
+      </form>
+      <div class="login-col">
+        <h2><span>2</span>Conexión en vivo con Supabase</h2>
+        <p class="intro">Pega los datos de tu proyecto de Supabase para que varias personas trabajen a la vez desde distintas computadoras. Sin ellos, la sala solo funciona en este navegador (varias pestañas) y se guarda aquí.</p>
+        <div class="f"><label class="lbl" for="f-url">Project URL</label><input id="f-url" type="url" placeholder="https://xxxxxxxx.supabase.co"></div>
+        <div class="f"><label class="lbl" for="f-key">Anon public key</label><input id="f-key" placeholder="eyJhbGciOi..."></div>
+        <div class="row">
+          <button class="btn" type="button" id="btn-creds">Guardar y probar conexión</button>
+          <button class="linkbtn" type="button" id="btn-sql">Ver SQL de las tablas</button>
+          <button class="linkbtn" type="button" id="btn-creds-clear">Borrar datos</button>
+        </div>
+        <div class="creds-status" id="creds-status"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TABLERO ============ -->
+<div id="app" class="app" hidden>
+  <header class="topbar">
+    <div class="brand"><span class="glyph" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>NÉVOA</div>
+    <div class="roominfo">Sala <b id="h-room"></b><span id="h-team"></span><span id="h-conn" class="conn"></span></div>
+    <div class="people" id="h-people"></div>
+    <button class="btn gold" id="btn-deliver">Guardar y compartir</button>
+  </header>
+
+  <div class="toolbar">
+    <label class="model"><span class="lbl">Modelo de negocio</span><input id="t-model" maxlength="80" placeholder="Modelo de negocio sin título"></label>
+    <div><span class="lbl">Canvas</span><div class="seg stages" id="t-stages" role="tablist"></div></div>
+    <div><span class="lbl">Relaciones</span><div class="seg small" id="t-rel">
+      <button data-rel="off">Ocultas</button><button data-rel="hover">Al pasar el puntero</button><button data-rel="all">Todas</button>
+    </div></div>
+    <div id="t-extra"></div>
+    <div class="counts" id="t-counts"></div>
+  </div>
+
+  <div class="stagebar" id="stagebar"></div>
+
+  <main class="main">
+    <div class="board-scroll" id="board-scroll"><div class="board" id="board"></div></div>
+    <aside class="side">
+      <nav class="tabs" id="tabs">
+        <button data-tab="detalle">Detalle</button>
+        <button data-tab="chat">Chat</button>
+        <button data-tab="blog">Blog</button>
+        <button data-tab="guia">Guía</button>
+        <button data-tab="datos">Datos</button>
+      </nav>
+      <div class="pane" data-pane="detalle" id="p-detalle"></div>
+      <div class="pane chat-pane" data-pane="chat">
+        <div class="chat-list" id="chat-list"></div>
+        <form class="composer" id="chat-form">
+          <input id="chat-input" maxlength="600" placeholder="Escribe al equipo…" autocomplete="off">
+          <button class="btn primary small" type="submit">Enviar</button>
+        </form>
+      </div>
+      <div class="pane" data-pane="blog">
+        <div class="filters" id="blog-filters"></div>
+        <form class="blog-form" id="blog-form">
+          <div><span class="lbl">Nueva entrada en el blog</span><select id="blog-block"></select></div>
+          <input id="blog-title" maxlength="100" placeholder="Título de la entrada">
+          <textarea id="blog-text" maxlength="3000" placeholder="Comenta, argumenta o plantea una inquietud para el equipo"></textarea>
+          <div class="row"><button class="btn primary small" type="submit">Publicar entrada</button>
+          <label class="muted row" style="gap:6px"><input type="checkbox" id="blog-all" style="width:auto"> Ver entradas de los tres canvas</label></div>
+        </form>
+        <div id="blog-list"></div>
+      </div>
+      <div class="pane" data-pane="guia" id="p-guia"></div>
+      <div class="pane" data-pane="datos" id="p-datos"></div>
+    </aside>
+  </main>
+</div>
+
+<div id="modal" class="modal" hidden></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* =====================================================================
+   CONFIGURACIÓN OPCIONAL
+   Si pegas aquí la URL y la llave "anon public" de tu proyecto de
+   Supabase, todas las personas que abran esta página quedarán conectadas
+   sin tener que escribir nada en la pantalla de entrada.
+   ===================================================================== */
+const NEVOA_CONFIG = {
+  supabaseUrl: '',
+  supabaseAnonKey: ''
+};
+
+/* ======================= CONTENIDO DEL MÉTODO ======================= */
+const BLOCKS = [
+  {k:'segmentos',  n:1, area:'seg', t:'Segmentos de clientes', s:'Segmentos', h:'Tipos de clientes a los que se dirige la oferta',
+   d:'Los diferentes tipos de clientes a los que se dirige la oferta, clasificados por necesidades, forma de accederlos, tipo de relación y rentabilidad. Luego se describe cada uno con variables demográficas, geográficas y psicográficas.'},
+  {k:'propuesta',  n:2, area:'pro', t:'Propuesta de valor', s:'Propuesta', h:'Paquete de productos y servicios y sus atributos',
+   d:'Lo que atrae a los clientes y por lo que están dispuestos a pagar: un paquete de productos y servicios con sus atributos principales. Puede haber una o varias ofertas, para uno o varios segmentos.'},
+  {k:'canales',    n:3, area:'can', t:'Canales de distribución y comunicación', s:'Canales', h:'Cómo se llega a los clientes y se les comunica la oferta',
+   d:'Los canales por los que se accede a los clientes para comunicarse con ellos y entregarles la propuesta de valor: fuerza de ventas, puntos de venta, afiliados, publicidad, reuniones, sitios web.'},
+  {k:'relaciones', n:4, area:'rel', t:'Relaciones con clientes', s:'Relaciones', h:'Tipo de relación por segmento y etapa del ciclo',
+   d:'El tipo de relación con cada segmento, desde la más personalizada (ejecutivos de cuenta) hasta la automatizada (portales web o de voz), en cada etapa: preventa, venta, posventa y migración a nuevas ofertas.'},
+  {k:'ingresos',   n:5, area:'ing', t:'Fuentes de ingresos', s:'Ingresos', h:'Transacciones, suscripciones, licenciamiento, alquiler, pauta…',
+   d:'De dónde llega el dinero por la propuesta de valor: transacciones, suscripciones, servicios, licenciamiento, alquiler, pauta publicitaria, entre otros.'},
+  {k:'recursos',   n:6, area:'rec', t:'Recursos clave', s:'Recursos', h:'Físicos, intelectuales, humanos y financieros',
+   d:'Lo que hay que desplegar para que el negocio funcione: recursos físicos, intelectuales, humanos y financieros, propios, arrendados o adquiridos de los aliados.'},
+  {k:'actividades',n:7, area:'act', t:'Actividades clave', s:'Actividades', h:'Lo que se hace con los recursos para producir la oferta',
+   d:'Las actividades principales que usan los recursos clave para producir la oferta y gestionar las relaciones con clientes y aliados. Conviene concentrarse en las competencias esenciales y buscar aliados para las demás.'},
+  {k:'aliados',    n:8, area:'ali', t:'Red de aliados', s:'Aliados', h:'Aliados y proveedores en que se apoya la oferta',
+   d:'Aliados y proveedores con los que se establecen relaciones para construir o complementar la oferta, acelerar la innovación u optimizar costos.'},
+  {k:'costos',     n:9, area:'cos', t:'Estructura de costos', s:'Costos', h:'Los costos más significativos del modelo',
+   d:'Los costos más significativos del modelo, sobre todo de recursos, actividades y red de aliados, y su relación con los demás bloques.'}
+];
+const BK = Object.fromEntries(BLOCKS.map(b=>[b.k,b]));
+const GUIDE_ORDER = ['aliados','actividades','recursos','propuesta','relaciones','canales','segmentos','costos','ingresos'];
+
+const STAGES = {
+  visualizar:{n:1, label:'Visualizar', cuadro:'Preguntas guía para describir el modelo (cuadro 1)',
+    obj:'Describir el modelo existente o formular uno nuevo. Cada elemento se codifica con una palabra o frase corta y se amplía en su descripción. Empiecen por segmentos y propuesta de valor, sigan con canales, relaciones e ingresos, y terminen con recursos, actividades, aliados y costos.',
+    desc:'Amplía la idea: qué es, para quién y por qué está en este bloque.'},
+  evaluar:{n:2, label:'Evaluar', cuadro:'Preguntas clave para evaluar el modelo (cuadro 2)',
+    obj:'Cuestionar el modelo: marcar las fortalezas y debilidades de cada elemento o del conjunto. La calificación debe apoyarse en criterios objetivos e información de respaldo (escríbanla en la descripción o adjúntenla).',
+    desc:'Criterio objetivo o dato que respalda la calificación.'},
+  innovar:{n:3, label:'Innovar', cuadro:'Preguntas clave para mejorar e innovar (cuadro 3)',
+    obj:'Cocrear alternativas: lluvia de ideas sobre mejoras y oportunidades, prototipos rápidos por grupos y horizontes de tiempo (H1 con capacidades actuales, H2 en desarrollo, H3 requiere investigación).',
+    desc:'Qué cambia, qué capacidades se necesitan y con qué aliados.'}
+};
+const STAGE_ORDER = ['visualizar','evaluar','innovar'];
+
+const Q = {
+  visualizar:{
+    aliados:['¿Quiénes son los aliados estratégicos más importantes?','¿Quiénes apoyan con recursos estratégicos y actividades?'],
+    actividades:['¿Cuáles son las actividades y procesos clave en el modelo de negocio?','¿Cuáles actividades internas se podrían externalizar con mayor calidad y menor costo?'],
+    recursos:['¿Cuáles son los recursos más importantes y costosos del modelo de negocio? (personas, redes, instalaciones, competencias…)'],
+    propuesta:['¿Qué se ofrece a los clientes en términos de productos y servicios?','¿Cuáles son aquellas cosas por las que pagan los clientes?','¿Por qué los clientes vienen a la compañía?','¿En qué se diferencia la oferta de la de otros proveedores?'],
+    relaciones:['¿Qué tipo de relaciones se construyen con los clientes?','¿Hay una estrategia de gestión de relaciones?'],
+    canales:['¿Cómo se llega a los clientes y cómo se les conquista?','¿A través de cuáles canales se interactúa con los clientes?'],
+    segmentos:['¿Quiénes son los clientes?','¿Pueden describir los diferentes tipos de clientes en los que se enfocan?','¿En qué difieren los segmentos de clientes?'],
+    costos:['¿Cómo es la estructura de costos?','¿Cuáles son los costos más importantes en la ejecución del modelo de negocio?'],
+    ingresos:['¿Cuál es la estructura de los ingresos?','¿Cómo se gana dinero en el negocio?','¿Qué tipo de ingresos se reciben? (transacciones, suscripciones, servicios, entre otros)']
+  },
+  evaluar:{
+    aliados:['¿Se trabaja con aliados en un grado suficiente?','¿Qué tan bien se trabaja con los socios y proveedores?','¿Qué tanto se depende de los socios y proveedores?'],
+    actividades:['¿Qué tan eficientes somos en la ejecución de las actividades?','¿Se hacen demasiadas actividades dentro de la misma organización, con la consiguiente falta de foco?'],
+    recursos:['¿Se dispone de los recursos adecuados en calidad y cantidad?','¿Se dispone de demasiados recursos internamente, lo que conduce a falta de enfoque?'],
+    propuesta:['¿La propuesta de valor todavía satisface suficientemente bien las necesidades de los clientes?','¿Se sabe cómo perciben los clientes la propuesta de valor?','¿Ofrecen los competidores propuestas similares a precios similares o mejores?','¿Qué tan bien atienden otros competidores a los clientes de la empresa?'],
+    relaciones:['¿Hay una estrategia de relacionamiento con los clientes?','¿Qué tan buenas son las relaciones con los mejores clientes?','¿Se gasta demasiado tiempo y dinero en relaciones con clientes no rentables?','¿Qué tan bien se manejan las relaciones con los clientes? (seguimiento, entre otros aspectos)'],
+    canales:['¿Hay un buen diseño de canales de comunicación y distribución?','¿Qué tan bien se llega a los clientes?','¿Se sabe qué tan buenos son los canales para adquirir clientes?','¿Qué tan integrados están los diferentes canales?','¿Se sabe qué tan eficientes en costos son los canales?','¿Se usan los canales correctos para los clientes correctos? (por ejemplo, según su rentabilidad)'],
+    segmentos:['¿Se conocen suficientemente bien los clientes y sus necesidades?','¿Es probable que algunos grupos de clientes nos abandonen pronto?','¿Podemos reagrupar los segmentos de clientes suficientemente bien?'],
+    costos:['¿La estructura de costos es adecuada?','¿Se entiende con claridad qué parte del negocio involucra los mayores costos?','¿Qué tan eficiente es la estructura de costos?'],
+    ingresos:['¿Qué tan estables son las fuentes de ingresos?','¿Qué tan diversificado es el flujo de ingresos?','¿Se depende de muy pocas fuentes de ingresos (clientes o negocios)?','¿Qué tan bien se manejan los precios de la propuesta de valor?']
+  },
+  innovar:{
+    aliados:['¿Cuáles aliados pueden ayudar a complementar la oferta de valor?','¿Cuáles proveedores pueden ayudar a optimizar el modelo de negocio?'],
+    actividades:['¿Hay actividades que convenga encargar a los aliados?','¿Las actividades de la empresa se adaptan perfectamente a la propuesta de valor?','¿Cómo se pueden optimizar las actividades?'],
+    recursos:['¿Existen recursos de los que se pueda prescindir o que se puedan sustituir?','¿Algunos recursos clave pueden ser provistos más eficientemente por los aliados?'],
+    propuesta:['¿Es posible ofrecer a los diferentes segmentos soluciones más a la medida?','¿Tienen los clientes otras necesidades que se puedan satisfacer con relativa facilidad, por la misma empresa o con los aliados?','¿Se puede complementar la propuesta de valor mediante acuerdos con aliados? (por ejemplo, proyectos de riesgo compartido)'],
+    relaciones:['¿Qué nivel de personalización requiere cada relación con los clientes? (por ejemplo, dedicada o autoservicio)'],
+    canales:['¿Se puede incrementar la base de clientes usando mejor los canales?','¿Cómo usar los canales costosos para clientes de alta rentabilidad y los de costo eficiente para clientes menos rentables?','¿Se pueden integrar mejor los canales? (por ejemplo, enlazando el sitio web con puntos físicos)','¿Se pueden introducir nuevos canales de distribución y comunicación? (por ejemplo, acuerdos de distribución con aliados)'],
+    segmentos:['¿Existen nuevos segmentos de clientes que sea posible atender?','¿Se pueden reagrupar mejor los segmentos según sus necesidades?'],
+    costos:['¿Existe la forma de reducir la estructura de costos?'],
+    ingresos:['¿Se pueden introducir nuevos flujos de ingresos? (por ejemplo, alquilar en vez de vender)','¿Se pueden hacer más ventas cruzadas? (por ejemplo, ofrecer otros productos propios o de los aliados)']
+  }
+};
+
+const SQL = `-- NÉVOA: tablas para trabajo en equipo en vivo
+-- Pégalo en Supabase > SQL Editor > New query y presiona Run.
+
+create table if not exists public.nevoa_items (
+  id text primary key,
+  room text not null,
+  kind text not null,
+  stage text,
+  data jsonb not null default '{}'::jsonb,
+  author text,
+  deleted boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists nevoa_items_room_idx on public.nevoa_items (room);
+alter table public.nevoa_items replica identity full;
+alter table public.nevoa_items enable row level security;
+drop policy if exists "nevoa_items_equipo" on public.nevoa_items;
+create policy "nevoa_items_equipo" on public.nevoa_items
+  for all to anon, authenticated using (true) with check (true);
+grant select, insert, update, delete on public.nevoa_items to anon, authenticated;
+
+create table if not exists public.nevoa_snapshots (
+  id text primary key,
+  room text not null,
+  title text,
+  data jsonb not null,
+  created_by text,
+  created_at timestamptz not null default now()
+);
+alter table public.nevoa_snapshots enable row level security;
+drop policy if exists "nevoa_snapshots_leer" on public.nevoa_snapshots;
+create policy "nevoa_snapshots_leer" on public.nevoa_snapshots
+  for select to anon, authenticated using (true);
+drop policy if exists "nevoa_snapshots_crear" on public.nevoa_snapshots;
+create policy "nevoa_snapshots_crear" on public.nevoa_snapshots
+  for insert to anon, authenticated with check (true);
+grant select, insert on public.nevoa_snapshots to anon, authenticated;
+
+-- Activa el tiempo real para la tabla del tablero
+do $$ begin
+  alter publication supabase_realtime add table public.nevoa_items;
+exception when duplicate_object then null;
+end $$;`;
+
+const AUTHOR_COLORS = ['#5F7A61','#A57F2E','#3F6E8C','#8C5A6E','#6B6A35','#3E7E77','#6F5B8E','#8C6446'];
+const MAX_FILE = 1024*1024; // 1 MB por archivo
+
+/* ============================== ESTADO ============================== */
+const S = {
+  me:null, room:'', mode:'local', conn:'local', sb:null, channel:null, bc:null,
+  items:new Map(), stage:'visualizar', relMode:'hover', tab:'detalle',
+  sel:null, hover:null, linkFrom:null, proto:'all', blogFilter:'all', unread:0,
+  online:{}, builtStage:null
+};
+
+/* ============================ UTILIDADES ============================ */
+const $ = (s,r=document)=>r.querySelector(s);
+const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = p => p+'_'+Date.now().toString(36)+Math.random().toString(36).slice(2,9);
+const now = () => new Date().toISOString();
+const ts = x => Date.parse(x) || 0;
+const plain = s => String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+const slug = s => plain(s).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+const cleanRoom = s => plain(s).toUpperCase().trim().replace(/\s+/g,'-').replace(/[^A-Z0-9_-]/g,'').slice(0,30);
+function initials(n){ const p=String(n||'?').trim().split(/\s+/); return ((p[0]||'?')[0]+(p[1]?p[1][0]:'')).toUpperCase(); }
+function colorFor(n){ let h=0; for(const c of slug(n)) h=(h*31+c.charCodeAt(0))>>>0; return AUTHOR_COLORS[h%AUTHOR_COLORS.length]; }
+function fmt(iso){ if(!iso) return ''; const d=new Date(iso); return d.toLocaleString('es-MX',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}); }
+function kb(n){ return n>=1048576 ? (n/1048576).toFixed(1)+' MB' : Math.max(1,Math.round((n||0)/1024))+' KB'; }
+function safeUrl(u){ return /^https?:\/\//i.test(u||'') ? u : '#'; }
+function safeData(u){ return /^data:/i.test(u||'') ? u : '#'; }
+function clientId(){ let id=sessionStorage.getItem('nevoa_cid'); if(!id){ id=uid('u'); sessionStorage.setItem('nevoa_cid',id); } return id; }
+let toastT; function toast(msg,bad){ const t=$('#toast'); t.textContent=msg; t.className='toast show'+(bad?' bad':''); clearTimeout(toastT); toastT=setTimeout(()=>t.className='toast',bad?6000:2800); }
+function download(name, content, type){ const b=new Blob([content],{type}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),2000); }
+async function copyText(t){ try{ await navigator.clipboard.writeText(t); toast('Enlace copiado.'); }catch(e){ prompt('Copia este texto:', t); } }
+const avatar = (name,color,cls='') => `<span class="av ${cls}" style="--c:${color||colorFor(name)}" title="${esc(name)}">${esc(initials(name))}</span>`;
+
+/* ======================= CREDENCIALES SUPABASE ====================== */
+function getCreds(){
+  if(NEVOA_CONFIG.supabaseUrl && NEVOA_CONFIG.supabaseAnonKey) return {u:NEVOA_CONFIG.supabaseUrl.trim(), k:NEVOA_CONFIG.supabaseAnonKey.trim(), fixed:true};
+  try{ const c=JSON.parse(localStorage.getItem('nevoa_creds')||'null'); if(c && c.u && c.k) return c; }catch(e){}
+  return null;
+}
+const sbCache={};
+function client(c){ if(!window.supabase) return null; const key=c.u+'|'+c.k; if(!sbCache[key]) sbCache[key]=window.supabase.createClient(c.u,c.k,{realtime:{params:{eventsPerSecond:20}}}); return sbCache[key]; }
+function explainError(err){
+  const m=(err && (err.message||err.code||'')).toString();
+  if(/nevoa_|does not exist|PGRST205|42P01|schema cache/i.test(m)) return 'Faltan las tablas de NÉVOA en tu proyecto. Abre "Ver SQL de las tablas", cópialo y ejecútalo en Supabase > SQL Editor.';
+  if(/Invalid API key|JWT|401/i.test(m)) return 'La llave anon public no es válida. Cópiala de nuevo desde Supabase > Project Settings > API.';
+  if(/Failed to fetch|NetworkError|fetch/i.test(m)) return 'No se pudo llegar a Supabase. Revisa la Project URL y tu conexión a internet.';
+  if(/permission|42501|row-level/i.test(m)) return 'Supabase rechazó el permiso. Ejecuta de nuevo el SQL de las tablas para crear las políticas.';
+  return 'Supabase respondió: '+m;
+}
+async function testCreds(c){
+  const sb=client(c); if(!sb) return {ok:false,msg:'No se pudo cargar la librería de Supabase. Revisa tu conexión a internet.'};
+  try{
+    const {error}=await sb.from('nevoa_items').select('id',{count:'exact',head:true});
+    if(error) return {ok:false,msg:explainError(error)};
+    const r2=await sb.from('nevoa_snapshots').select('id',{count:'exact',head:true});
+    if(r2.error) return {ok:false,msg:explainError(r2.error)};
+    return {ok:true,msg:'Conexión lista con '+new URL(c.u).host+'. Todo el equipo puede trabajar en vivo.'};
+  }catch(e){ return {ok:false,msg:explainError(e)}; }
+}
+
+/* ============================ ENTRADA ============================ */
+function showLogin(){
+  $('#login').hidden=false; $('#app').hidden=true;
+  let p={}; try{ p=JSON.parse(localStorage.getItem('nevoa_profile')||'{}'); }catch(e){}
+  const qs=new URLSearchParams(location.search);
+  $('#f-name').value=p.name||''; $('#f-role').value=p.role||'';
+  $('#f-room').value=qs.get('sala')||p.room||''; $('#f-team').value=p.team||'';
+  const c=getCreds();
+  if(c){ $('#f-url').value=c.u; $('#f-key').value=c.fixed?'(configurada en el archivo)':c.k; if(c.fixed){ $('#f-url').disabled=true; $('#f-key').disabled=true; } }
+  credsStatus();
+}
+function credsStatus(msg,ok){
+  const el=$('#creds-status'); const c=getCreds();
+  if(msg){ el.textContent=msg; el.className='creds-status '+(ok?'ok':'bad'); return; }
+  if(c){ el.textContent='Conexión en vivo configurada: '+(()=>{try{return new URL(c.u).host}catch(e){return c.u}})()+'.'; el.className='creds-status ok'; }
+  else { el.textContent='Sin conexión en vivo: la sala trabaja en este navegador y guarda localmente.'; el.className='creds-status'; }
+}
+async function saveCreds(){
+  const u=$('#f-url').value.trim().replace(/\/+$/,''), k=$('#f-key').value.trim();
+  if(!/^https:\/\/.+/.test(u)){ credsStatus('La Project URL debe empezar con https:// (la encuentras en Supabase > Project Settings > API).'); return; }
+  if(k.length<30){ credsStatus('La llave anon public parece incompleta. Cópiala completa desde Supabase > Project Settings > API.'); return; }
+  credsStatus('Probando conexión…',true);
+  const r=await testCreds({u,k});
+  localStorage.setItem('nevoa_creds',JSON.stringify({u,k}));
+  credsStatus(r.ok?r.msg:r.msg+' Los datos quedaron guardados; vuelve a probar cuando lo corrijas.', r.ok);
+}
+
+async function enter(e){
+  if(e) e.preventDefault();
+  const name=$('#f-name').value.trim(), role=$('#f-role').value.trim(), room=cleanRoom($('#f-room').value), team=$('#f-team').value.trim(), model=$('#f-model').value.trim();
+  const err=$('#login-err');
+  if(!name){ err.textContent='Escribe tu nombre real para que el equipo sepa quién hace cada aporte.'; $('#f-name').focus(); return; }
+  if(!room){ err.textContent='Escribe el código de la sala. Todo el equipo debe usar el mismo.'; $('#f-room').focus(); return; }
+  err.textContent='';
+  localStorage.setItem('nevoa_profile',JSON.stringify({name,role,room,team}));
+  S.me={id:clientId(), name, role, color:colorFor(name)};
+  S.room=room;
+  history.replaceState(null,'',location.pathname+'?sala='+encodeURIComponent(room));
+  $('#login').hidden=true; $('#app').hidden=false;
+  bindApp();
+  buildBoard();
+  renderAll();
+  await connect();
+  ensureMetaAndMember(team, model);
+  renderAll();
+}
+
+/* ============================ DATOS ============================ */
+const metaId = () => 'meta_'+slug(S.room);
+const meta = () => S.items.get(metaId()) || {data:{}};
+const liveAll = () => [...S.items.values()].filter(i=>!i.deleted && i.data);
+const byCreated = (a,b)=>ts(a.created_at)-ts(b.created_at);
+const els = (st,block) => liveAll().filter(i=>i.kind==='element' && i.stage===st && (!block||i.data.block===block)).sort(byCreated);
+const rels = st => liveAll().filter(i=>i.kind==='relation' && i.stage===st);
+const filesOf = (st,block,elId) => liveAll().filter(i=>i.kind==='file' && i.stage===st && i.data.block===block && (elId===undefined || (i.data.elementId||null)===(elId||null))).sort(byCreated);
+const members = () => liveAll().filter(i=>i.kind==='member').sort((a,b)=>a.data.name.localeCompare(b.data.name));
+
+function upsertLocal(item){
+  if(!item || !item.id) return false;
+  const prev=S.items.get(item.id);
+  if(prev && ts(prev.updated_at) > ts(item.updated_at)) return false;
+  S.items.set(item.id,item); return true;
+}
+let persistT;
+function persistLocal(){
+  clearTimeout(persistT);
+  persistT=setTimeout(()=>{
+    try{ localStorage.setItem('nevoa_room_'+S.room, JSON.stringify([...S.items.values()])); }
+    catch(e){ toast('Este navegador ya no tiene espacio para guardar la sala. Quita archivos grandes o conecta Supabase.',true); }
+  },250);
+}
+async function save(list){
+  list=Array.isArray(list)?list:[list];
+  const t=now();
+  list.forEach(it=>{ it.room=S.room; it.updated_at=t; if(!it.created_at) it.created_at=t; if(it.deleted===undefined) it.deleted=false; upsertLocal(it); });
+  scheduleRender();
+  if(S.mode==='supabase'){
+    const {error}=await S.sb.from('nevoa_items').upsert(list);
+    if(error){ toast('No se guardó el cambio. '+explainError(error),true); setConn('error'); }
+  } else {
+    persistLocal();
+    if(S.bc) list.forEach(item=>S.bc.postMessage({type:'item',item}));
+  }
+}
+function create(kind, stage, data){ const it={id:uid(kind), kind, stage:stage||null, data, author:S.me.name}; save(it); return it; }
+function patch(id, p){ const it=S.items.get(id); if(!it) return; save({...it, data:{...it.data, ...p}}); }
+function removeItem(id){ const it=S.items.get(id); if(!it) return; save({...it, deleted:true}); }
+function removeElement(id){
+  const it=S.items.get(id); if(!it) return;
+  const extra=liveAll().filter(i=>(i.kind==='relation' && (i.data.from===id||i.data.to===id)) || (i.kind==='file' && i.data.elementId===id));
+  save([{...it,deleted:true}, ...extra.map(x=>({...x,deleted:true}))]);
+  if(S.sel && S.sel.id===id) S.sel=null;
+}
+
+function ensureMetaAndMember(team, model){
+  const m=S.items.get(metaId());
+  if(!m) save({id:metaId(), kind:'meta', stage:null, author:S.me.name, data:{modelName:model||'', team:team||''}});
+  else { const p={}; if(model && !m.data.modelName) p.modelName=model; if(team && !m.data.team) p.team=team; if(Object.keys(p).length) patch(m.id,p); }
+  const mid='member_'+slug(S.room)+'_'+slug(S.me.name);
+  const prev=S.items.get(mid);
+  save({id:mid, kind:'member', stage:null, author:S.me.name, created_at:prev?prev.created_at:undefined, data:{name:S.me.name, role:S.me.role||(prev&&prev.data.role)||'', color:S.me.color, lastSeen:now()}});
+}
+
+/* ========================= SINCRONIZACIÓN ========================= */
+function setConn(c){ S.conn=c; renderHeader(); if(S.tab==='datos') renderDatos(); }
+async function connect(){
+  const c=getCreds();
+  if(c && window.supabase){
+    S.sb=client(c); S.mode='supabase'; setConn('connecting');
+    const ok=await loadAll();
+    if(ok){ subscribe(); return; }
+    S.mode='local'; S.sb=null;
+  } else if(c && !window.supabase){
+    toast('No se pudo cargar Supabase (¿sin internet?). La sala funciona solo en este navegador por ahora.',true);
+  }
+  startLocal();
+}
+async function loadAll(){
+  const rows=[]; let from=0;
+  while(true){
+    const {data,error}=await S.sb.from('nevoa_items').select('*').eq('room',S.room).order('created_at',{ascending:true}).range(from,from+999);
+    if(error){ toast(explainError(error),true); setConn('error'); return false; }
+    rows.push(...data); if(data.length<1000) break; from+=1000;
+  }
+  S.items.clear(); rows.forEach(upsertLocal); scheduleRender(); return true;
+}
+let reloadT;
+function reloadSoon(){ clearTimeout(reloadT); reloadT=setTimeout(()=>{ if(S.mode==='supabase') loadAll(); },800); }
+async function refetch(id){
+  const {data}=await S.sb.from('nevoa_items').select('*').eq('id',id).maybeSingle();
+  if(data && upsertLocal(data)) scheduleRender();
+}
+function presencePayload(){ return {id:S.me.id, name:S.me.name, role:S.me.role, color:S.me.color, stage:S.stage}; }
+function subscribe(){
+  if(S.channel) S.sb.removeChannel(S.channel);
+  const ch=S.sb.channel('nevoa-'+S.room,{config:{presence:{key:S.me.id}}});
+  ch.on('postgres_changes',{event:'*',schema:'public',table:'nevoa_items',filter:'room=eq.'+S.room}, payload=>{
+      const row=payload.new;
+      if(!row || !row.id){ reloadSoon(); return; }
+      if(!row.data || (row.kind==='file' && !row.deleted && !row.data.dataUrl && !row.data.url)){ refetch(row.id); return; }
+      const isNew=!S.items.has(row.id);
+      if(upsertLocal(row)){
+        if(isNew && row.kind==='chat' && row.author!==S.me.name && S.tab!=='chat') S.unread++;
+        scheduleRender();
+      }
+    })
+    .on('presence',{event:'sync'},()=>{
+      const st=ch.presenceState(); S.online={};
+      Object.values(st).forEach(arr=>arr.forEach(p=>{ if(p && p.id) S.online[p.id]=p; }));
+      renderHeader();
+    })
+    .subscribe(async status=>{
+      if(status==='SUBSCRIBED'){ setConn('live'); await ch.track(presencePayload()); reloadSoon(); }
+      else if(status==='CHANNEL_ERROR' || status==='TIMED_OUT'){ setConn('connecting'); }
+      else if(status==='CLOSED'){ setConn('error'); }
+    });
+  S.channel=ch;
+}
+function startLocal(){
+  S.mode='local'; setConn('local');
+  try{ const arr=JSON.parse(localStorage.getItem('nevoa_room_'+S.room)||'[]'); arr.forEach(upsertLocal); }catch(e){}
+  if('BroadcastChannel' in window){
+    S.bc=new BroadcastChannel('nevoa_'+S.room);
+    S.bc.onmessage=ev=>{
+      const m=ev.data||{};
+      if(m.type==='item'){ const isNew=!S.items.has(m.item.id); if(upsertLocal(m.item)){ if(isNew && m.item.kind==='chat' && S.tab!=='chat') S.unread++; persistLocal(); scheduleRender(); } }
+      else if(m.type==='hello'){ S.online[m.user.id]={...m.user,t:Date.now()}; renderHeader(); }
+      else if(m.type==='bye'){ delete S.online[m.id]; renderHeader(); }
+    };
+    const hello=()=>{ S.bc.postMessage({type:'hello',user:presencePayload()}); const lim=Date.now()-11000; Object.keys(S.online).forEach(k=>{ if(S.online[k].t<lim) delete S.online[k]; }); renderHeader(); };
+    hello(); setInterval(hello,4000);
+    window.addEventListener('beforeunload',()=>S.bc.postMessage({type:'bye',id:S.me.id}));
+  }
+  scheduleRender();
+}
+function announceStage(){ if(S.channel && S.conn==='live') S.channel.track(presencePayload()); if(S.bc) S.bc.postMessage({type:'hello',user:presencePayload()}); }
+
+/* ============================ RENDER ============================ */
+let rafId=null;
+function scheduleRender(){ if(rafId) return; rafId=requestAnimationFrame(()=>{ rafId=null; renderAll(); }); }
+function busy(el){ const a=document.activeElement; return !!(el && a && el.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)); }
+const pending=new Set();
+function guarded(key, el, fn){ if(busy(el)){ pending.add(key); return; } pending.delete(key); fn(); }
+document.addEventListener('focusout',()=>setTimeout(()=>{ if(pending.size) scheduleRender(); },160));
+
+function renderAll(){
+  if($('#app').hidden) return;
+  renderHeader(); renderToolbar(); renderStagebar(); renderBoard(); renderTabs();
+  guarded('detalle',$('#p-detalle'),renderDetail);
+  renderChat();
+  guarded('blog',$('#blog-list'),renderBlog);
+  renderGuide();
+  if(S.tab==='datos') guarded('datos',$('#p-datos'),renderDatos);
+}
+
+function renderHeader(){
+  if(!S.me) return;
+  $('#h-room').textContent=S.room;
+  const tm=meta().data.team; $('#h-team').textContent=tm?tm:'';
+  const labels={local:'Solo este navegador', connecting:'Conectando…', live:'En vivo con Supabase', error:'Sin conexión con Supabase'};
+  const c=$('#h-conn'); c.className='conn '+S.conn; c.textContent=labels[S.conn]||'';
+  const seen={}; const ppl=[presencePayload(), ...Object.values(S.online)].filter(p=>{ const k=slug(p.name); if(seen[k]) return false; seen[k]=1; return true; });
+  $('#h-people').innerHTML='<span class="lbl">En la sala</span>'+ppl.map(p=>`<span class="av" style="--c:${p.color||colorFor(p.name)}" title="${esc(p.name+(p.role?', '+p.role:'')+(p.stage?', en '+STAGES[p.stage].label:''))}">${esc(initials(p.name))}</span>`).join('');
+}
+
+function renderToolbar(){
+  const mi=$('#t-model'); if(document.activeElement!==mi) mi.value=meta().data.modelName||'';
+  $('#t-stages').innerHTML=STAGE_ORDER.map(k=>`<button role="tab" data-stage="${k}" class="${S.stage===k?'on':''}" aria-selected="${S.stage===k}"><span class="n">${STAGES[k].n}</span>${STAGES[k].label}<em>${els(k).length}</em></button>`).join('');
+  $$('#t-rel button').forEach(b=>b.classList.toggle('on',b.dataset.rel===S.relMode));
+  const ex=$('#t-extra');
+  if(S.stage==='innovar'){
+    ex.innerHTML=`<span class="lbl">Prototipo</span><div class="seg small" id="t-proto">${['all','A','B','C'].map(p=>`<button data-proto="${p}" class="${S.proto===p?'on':''}">${p==='all'?'Todos':p}</button>`).join('')}</div>`;
+  } else ex.innerHTML='';
+  const ne=els(S.stage).length, nr=rels(S.stage).length;
+  $('#t-counts').innerHTML=`${ne} ${ne===1?'elemento':'elementos'}<br>${nr} ${nr===1?'relación':'relaciones'}`;
+}
+
+function renderStagebar(){
+  const bar=$('#stagebar'); const st=STAGES[S.stage];
+  bar.classList.toggle('linking',!!S.linkFrom);
+  const dl=(meta().data.deliveries||[]);
+  if(S.linkFrom){
+    const f=S.items.get(S.linkFrom);
+    bar.innerHTML=`<p><b>Crear relación:</b> haz clic en el elemento del tablero que se relaciona con “${esc(f?f.data.title:'')}”. Después escribirás el argumento que explica la relación.</p><div class="acts"><button class="btn small" data-act="cancel-link">Cancelar</button></div>`;
+    return;
+  }
+  let acts='';
+  if(S.stage!=='visualizar'){
+    const prev=STAGE_ORDER[STAGE_ORDER.indexOf(S.stage)-1];
+    acts=`<button class="btn small" data-act="copy-prev" data-from="${prev}">Traer elementos de ${STAGES[prev].label}</button>`;
+  }
+  const last=dl.length?dl[dl.length-1]:null;
+  bar.innerHTML=`<p><b>Canvas ${st.n}, ${st.label.toLowerCase()}.</b> ${esc(st.obj)}${last?` <span class="muted">Última entrega al profesor: ${fmt(last.at)}, por ${esc(last.by)}</span>`:''}</p><div class="acts">${acts}</div>`;
+}
+
+/* ---------- Tablero ---------- */
+const clipIcon='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5l-8.6 8.6a5 5 0 0 1-7.1-7.1l8.6-8.6a3.4 3.4 0 0 1 4.8 4.8l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4l7.9-7.9"/></svg>';
+function buildBoard(){
+  const board=$('#board');
+  board.innerHTML=BLOCKS.map(b=>`
+    <section class="block ${b.k==='propuesta'?'core':''}" data-block="${b.k}" style="grid-area:${b.area}">
+      <div class="block-head">
+        <button class="block-title" data-act="block"><span class="n">${b.n}</span> ${b.t}</button>
+        <button class="tool" data-act="block" title="Archivos de apoyo del bloque">${clipIcon}<span class="fc"></span></button>
+        <button class="tool add" data-act="add" title="Agregar elemento" aria-label="Agregar elemento a ${b.t}">+</button>
+      </div>
+      <p class="block-hint">${b.h}</p>
+      <ul class="chips"></ul>
+      <form class="add-form" hidden><input maxlength="80" placeholder="Palabra o frase corta y Enter"></form>
+    </section>`).join('')+'<svg class="rel-svg" id="rel-svg"></svg><div class="rel-tips" id="rel-tips"></div>';
+  S.builtStage=S.stage;
+}
+function badges(el, st){
+  const d=el.data; let h='';
+  if(st==='evaluar'){ if(d.tag==='fortaleza') h+='<span class="bdg f" title="Fortaleza">F</span>'; if(d.tag==='debilidad') h+='<span class="bdg d" title="Debilidad">D</span>'; if(d.score) h+=`<span class="bdg sc" title="Calificación">${d.score}/5</span>`; }
+  if(st==='innovar'){ if(d.horizon) h+=`<span class="bdg ${d.horizon.toLowerCase()}" title="Horizonte">${d.horizon}</span>`; if(d.proto) h+=`<span class="bdg pr" title="Prototipo">${d.proto}</span>`; }
+  return h;
+}
+function renderBoard(){
+  const board=$('#board'); if(!board.children.length) buildBoard();
+  const st=S.stage; const R=rels(st);
+  board.classList.toggle('linking',!!S.linkFrom);
+  BLOCKS.forEach(b=>{
+    const sec=board.querySelector(`.block[data-block="${b.k}"]`);
+    sec.classList.toggle('sel', !!(S.sel && S.sel.type==='block' && S.sel.key===b.k));
+    let list=els(st,b.k);
+    if(st==='innovar' && S.proto!=='all') list=list.filter(e=>!e.data.proto || e.data.proto===S.proto);
+    const ul=sec.querySelector('.chips');
+    ul.innerHTML=list.length? list.map(e=>{
+      const nr=R.filter(r=>r.data.from===e.id||r.data.to===e.id).length;
+      const cls=['chip']; if(S.sel&&S.sel.type==='el'&&S.sel.id===e.id) cls.push('sel'); if(S.linkFrom===e.id) cls.push('from');
+      if(st==='innovar' && (e.data.horizon==='H2'||e.data.horizon==='H3')) cls.push('strong');
+      return `<li class="${cls.join(' ')}" data-id="${e.id}" tabindex="0" style="--c:${colorFor(e.author)}" title="${esc(e.author)}${e.data.desc?': '+esc(e.data.desc.slice(0,160)):''}"><span class="t">${esc(e.data.title)}</span><span class="meta">${badges(e,st)}${nr?`<span class="bdg rl" title="${nr} relaciones">◆${nr}</span>`:''}</span></li>`;
+    }).join('') : `<li class="empty-hint">Sin elementos todavía</li>`;
+    const nf=filesOf(st,b.k).length; sec.querySelector('.fc').textContent=nf?nf:'';
+  });
+  drawRelations();
+}
+function drawRelations(){
+  const board=$('#board'), svg=$('#rel-svg'), tips=$('#rel-tips'); if(!svg) return;
+  $$('.chip.linked',board).forEach(c=>c.classList.remove('linked'));
+  svg.innerHTML=''; tips.innerHTML='';
+  const W=board.scrollWidth, H=board.scrollHeight;
+  svg.setAttribute('width',W); svg.setAttribute('height',H); svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  if(S.relMode==='off') return;
+  let list=rels(S.stage);
+  const focus=S.hover || (S.sel && S.sel.type==='el' ? S.sel.id : null);
+  if(S.relMode==='hover'){ if(!focus) return; list=list.filter(r=>r.data.from===focus||r.data.to===focus); }
+  const br=board.getBoundingClientRect();
+  const pt=el=>{ const r=el.getBoundingClientRect(); return {x:r.left-br.left+r.width/2, y:r.top-br.top+r.height/2}; };
+  let out='', tipHTML='';
+  list.forEach(r=>{
+    const a=board.querySelector(`.chip[data-id="${r.data.from}"]`), b=board.querySelector(`.chip[data-id="${r.data.to}"]`);
+    if(!a||!b) return;
+    a.classList.add('linked'); b.classList.add('linked');
+    const p=pt(a), q=pt(b);
+    const mx=(p.x+q.x)/2, my=(p.y+q.y)/2 - Math.min(60, Math.abs(p.x-q.x)*0.15 + 10);
+    const cx=(p.x+2*mx+q.x)/4, cy=(p.y+2*my+q.y)/4;
+    out+=`<path class="rel-line" d="M${p.x},${p.y} Q${mx},${my} ${q.x},${q.y}"/><circle class="rel-dot" cx="${cx}" cy="${cy}" r="7" data-rel="${r.id}"><title>${esc(r.data.text||'Relación sin argumento')}</title></circle>`;
+    if(S.relMode==='hover') tipHTML+=`<div class="rel-tip" style="left:${cx}px;top:${cy}px">${esc(r.data.text||'Relación sin argumento todavía')}</div>`;
+  });
+  svg.innerHTML=out; tips.innerHTML=tipHTML;
+}
+
+/* ---------- Pestañas ---------- */
+function renderTabs(){
+  $$('#tabs button').forEach(b=>{
+    b.classList.toggle('on',b.dataset.tab===S.tab);
+    const old=b.querySelector('.dot'); if(old) old.remove();
+    if(b.dataset.tab==='chat' && S.unread) b.insertAdjacentHTML('beforeend',`<span class="dot">${S.unread}</span>`);
+  });
+  $$('.pane').forEach(p=>p.hidden=p.dataset.pane!==S.tab);
+}
+function setTab(t){ S.tab=t; if(t==='chat') S.unread=0; renderTabs(); if(t==='datos') renderDatos(); if(t==='chat') renderChat(true); }
+
+/* ---------- Detalle ---------- */
+function filesHTML(list){
+  if(!list.length) return '<p class="muted">Aún no hay archivos de apoyo.</p>';
+  return `<ul class="files">${list.map(f=>{
+    const d=f.data; const isImg=d.dataUrl && /^image\//.test(d.type||'');
+    const link = d.url ? `<a href="${esc(safeUrl(d.url))}" target="_blank" rel="noopener">${esc(d.name||d.url)}</a>`
+      : `<a href="${esc(safeData(d.dataUrl))}" download="${esc(d.name)}">${esc(d.name)}</a><small class="muted">${kb(d.size)}</small>`;
+    return `<li>${isImg?`<img src="${esc(safeData(d.dataUrl))}" alt="">`:''}${link}<small class="muted">${esc(f.author)}</small><button class="x" data-act="del-file" data-id="${f.id}" aria-label="Quitar archivo">×</button></li>`;
+  }).join('')}</ul>`;
+}
+function uploadHTML(block, elId){
+  return `<div class="row upload" data-block="${block}" data-el="${elId||''}">
+    <label class="btn ghost small">Adjuntar archivo<input type="file" data-act="file" hidden></label>
+    <button class="btn ghost small" data-act="add-link">Agregar enlace</button></div>
+    <p class="muted">Archivos de hasta 1 MB (PDF, imagen, hoja de cálculo…). Para archivos más grandes, agrega un enlace de Drive o similar.</p>`;
+}
+function renderDetail(){
+  const p=$('#p-detalle'); const st=S.stage;
+  if(S.sel && S.sel.type==='el'){
+    const el=S.items.get(S.sel.id);
+    if(!el || el.deleted || el.stage!==st){ S.sel=null; return renderDetail(); }
+    const b=BK[el.data.block]; const d=el.data;
+    const rs=rels(st).filter(r=>r.data.from===el.id||r.data.to===el.id);
+    let extra='';
+    if(st==='evaluar'){
+      extra=`<div class="field"><span class="lbl">Resultado de la evaluación</span><div class="seg small">${[['fortaleza','Fortaleza'],['debilidad','Debilidad'],['','Sin marcar']].map(([v,l])=>`<button type="button" data-tag="${v}" class="${(d.tag||'')===v?'on':''}">${l}</button>`).join('')}</div></div>
+      <div class="field"><span class="lbl">Calificación (1 muy baja, 5 muy alta)</span><div class="seg small">${[1,2,3,4,5].map(n=>`<button type="button" data-score="${n}" class="${Number(d.score)===n?'on':''}">${n}</button>`).join('')}</div></div>`;
+    }
+    if(st==='innovar'){
+      extra=`<div class="field"><span class="lbl">Horizonte de crecimiento</span><div class="seg small">${[['H1','H1 hoy'],['H2','H2 en desarrollo'],['H3','H3 investigación']].map(([v,l])=>`<button type="button" data-hz="${v}" class="${d.horizon===v?'on':''}">${l}</button>`).join('')}</div>
+      <p class="muted">H1 se logra con capacidades actuales; H2 y H3 requieren desarrollar o investigar capacidades que todavía no existen.</p></div>
+      <div class="field"><label class="lbl" for="d-proto">Prototipo</label><select id="d-proto" data-f="proto" style="max-width:220px"><option value="">Base común (todos)</option>${['A','B','C'].map(x=>`<option ${d.proto===x?'selected':''}>${x}</option>`).join('')}</select></div>`;
+    }
+    const name=id=>{ const o=S.items.get(id); return o&&!o.deleted ? `${esc(o.data.title)} <span class="muted">(${esc(BK[o.data.block].s)})</span>` : '<span class="muted">elemento eliminado</span>'; };
+    p.innerHTML=`
+      <div class="kicker">${b.n}. ${esc(b.t)}</div>
+      <div class="field"><label class="lbl" for="d-title">Elemento (palabra o frase corta)</label><input id="d-title" data-f="title" maxlength="80" value="${esc(d.title)}"></div>
+      <div class="field"><label class="lbl" for="d-desc">Descripción</label><textarea id="d-desc" data-f="desc" maxlength="2000" rows="4" placeholder="${esc(STAGES[st].desc)}">${esc(d.desc||'')}</textarea></div>
+      ${extra}
+      <p class="muted">Aportado por ${esc(el.author)} (${fmt(el.created_at)}). Última edición: ${fmt(el.updated_at)}</p>
+      <hr class="hr">
+      <h4>Relaciones de este elemento</h4>
+      ${rs.length?`<ul class="rels">${rs.map(r=>`<li><div>${name(r.data.from)} con ${name(r.data.to)}</div><div>${r.data.text?esc(r.data.text):'<span class="muted">Sin argumento todavía</span>'}</div><div class="row" style="margin-top:4px"><button class="linkbtn" data-act="edit-rel" data-id="${r.id}">Editar argumento</button><button class="linkbtn" data-act="del-rel" data-id="${r.id}">Quitar</button></div></li>`).join('')}</ul>`:'<p class="muted">Las relaciones muestran la lógica y la causalidad entre elementos de distintos bloques.</p>'}
+      <button class="btn small" data-act="link">Relacionar con otro elemento</button>
+      <hr class="hr">
+      <h4>Archivos de apoyo del elemento</h4>
+      ${filesHTML(filesOf(st,d.block,el.id))}
+      ${uploadHTML(d.block, el.id)}
+      <hr class="hr">
+      <button class="btn danger small" data-act="del-el">Eliminar elemento</button>`;
+    return;
+  }
+  if(S.sel && S.sel.type==='block'){
+    const b=BK[S.sel.key]; const list=els(st,b.k);
+    p.innerHTML=`
+      <div class="kicker">Bloque ${b.n}</div><h3>${esc(b.t)}</h3>
+      <p>${esc(b.d)}</p>
+      <h4>Preguntas para este canvas</h4>
+      <ul>${Q[st][b.k].map(q=>`<li>${esc(q)}</li>`).join('')}</ul>
+      <p class="muted">${list.length} ${list.length===1?'elemento':'elementos'} en este bloque.</p>
+      <div class="row"><button class="btn small" data-act="add-here" data-block="${b.k}">Agregar elemento</button><button class="btn small" data-act="blog-block" data-block="${b.k}">Escribir en el blog del bloque</button></div>
+      <hr class="hr">
+      <h4>Archivos de apoyo del bloque</h4>
+      ${filesHTML(filesOf(st,b.k,null))}
+      ${uploadHTML(b.k,'')}`;
+    return;
+  }
+  p.innerHTML=`
+    <h3>Cómo trabajar en equipo</h3>
+    <ol class="howto">
+      <li>Con el <b>+</b> de cada bloque agrega elementos: una palabra o frase corta, como un post-it.</li>
+      <li>Haz clic en un elemento para ampliar su descripción, adjuntar archivos o relacionarlo con otro elemento y escribir el argumento de la relación.</li>
+      <li>Haz clic en el título de un bloque para ver sus preguntas guía y sus archivos de apoyo.</li>
+      <li>Discutan en el <b>Chat</b> y dejen argumentos más largos en el <b>Blog</b>, organizado por los nueve bloques.</li>
+      <li>Pasen de <b>Visualizar</b> a <b>Evaluar</b> y a <b>Innovar</b>; en cada canvas pueden traer los elementos del anterior.</li>
+      <li>Cuando todo el equipo esté de acuerdo, usen <b>Guardar y compartir</b> para entregarlo al profesor.</li>
+    </ol>
+    <div class="note">Los cambios de cada persona aparecen en las pantallas de los demás en unos segundos cuando la sala está “En vivo con Supabase”.</div>`;
+}
+
+/* ---------- Chat ---------- */
+function renderChat(forceBottom){
+  const box=$('#chat-list'); const near=box.scrollHeight-box.scrollTop-box.clientHeight<80;
+  const msgs=liveAll().filter(i=>i.kind==='chat').sort(byCreated);
+  box.innerHTML=msgs.length? msgs.map(m=>`<div class="msg ${m.author===S.me.name?'me':''}">${avatar(m.author,colorFor(m.author),'sm')}<div class="body"><div class="who"><b>${esc(m.author)}</b> ${fmt(m.created_at)}</div><p>${esc(m.data.text)}</p></div></div>`).join('')
+    : '<p class="muted">Aún no hay mensajes. Escribe el primero para coordinar al equipo.</p>';
+  if(near||forceBottom) box.scrollTop=box.scrollHeight;
+}
+
+/* ---------- Blog ---------- */
+function renderBlog(){
+  const st=S.stage; const all=$('#blog-all').checked;
+  $('#blog-filters').innerHTML=[['all','Todos'],...GUIDE_ORDER.map(k=>[k,BK[k].s])].map(([k,l])=>`<button class="fchip ${S.blogFilter===k?'on':''}" data-bf="${k}">${l}</button>`).join('');
+  const sel=$('#blog-block');
+  if(!sel.options.length) sel.innerHTML=`<option value="general">General (todo el modelo)</option>`+GUIDE_ORDER.map(k=>`<option value="${k}">${BK[k].t}</option>`).join('');
+  let posts=liveAll().filter(i=>i.kind==='post' && (all||i.stage===st));
+  if(S.blogFilter!=='all') posts=posts.filter(p=>p.data.block===S.blogFilter);
+  posts.sort((a,b)=>ts(b.created_at)-ts(a.created_at));
+  const comments=liveAll().filter(i=>i.kind==='comment').sort(byCreated);
+  let summary='';
+  if(S.blogFilter!=='all'){
+    const list=els(st,S.blogFilter);
+    summary=`<div class="summary"><b>${esc(BK[S.blogFilter].t)} en el canvas ${STAGES[st].label}</b>${list.length?`<ul>${list.map(e=>`<li>${esc(e.data.title)} ${badges(e,st)}</li>`).join('')}</ul>`:'<div class="muted">Sin elementos todavía.</div>'}</div>`;
+  }
+  $('#blog-list').innerHTML=summary+(posts.length? posts.map(p=>{
+    const cs=comments.filter(c=>c.data.postId===p.id);
+    const bl=p.data.block==='general'?'General':(BK[p.data.block]?BK[p.data.block].t:'');
+    return `<article class="post"><div class="tag">${esc(bl)}, canvas ${esc(STAGES[p.stage]?STAGES[p.stage].label:'')}</div><h5>${esc(p.data.title||'Sin título')}</h5><p>${esc(p.data.text)}</p><div class="who">${esc(p.author)}, ${fmt(p.created_at)}${p.author===S.me.name?` <button class="linkbtn" data-act="del-post" data-id="${p.id}">Borrar</button>`:''}</div>
+      <div class="comments">${cs.map(c=>`<div class="comment"><div class="who"><b>${esc(c.author)}</b> ${fmt(c.created_at)}</div><p>${esc(c.data.text)}</p></div>`).join('')}
+      <form class="reply" data-post="${p.id}"><input maxlength="1000" placeholder="Responder o comentar"><button class="btn small" type="submit">Responder</button></form></div></article>`;
+  }).join('') : '<p class="muted">No hay entradas para este filtro. Publiquen argumentos, dudas, fortalezas o debilidades por bloque.</p>');
+}
+
+/* ---------- Guía ---------- */
+function renderGuide(){
+  const st=S.stage; const g=STAGES[st];
+  let extra='';
+  if(st==='visualizar') extra=`<div class="note">Orden sugerido: segmentos de clientes y propuesta de valor (el núcleo), luego canales, relaciones e ingresos, y al final recursos, actividades, aliados y costos. Por eso los bloques del tablero están numerados del 1 al 9.</div>`;
+  if(st==='evaluar') extra=`<div class="note">En cada elemento marquen si es fortaleza o debilidad y califíquenlo del 1 al 5. Escriban en la descripción el dato o criterio objetivo que respalda la calificación y comenten en el blog del bloque.</div>`;
+  if(st==='innovar') extra=`<div class="note"><b>Prototipos por grupos.</b> Dividan al equipo en grupos (A, B, C); cada uno propone uno o más prototipos del modelo. Después roten a algunas personas entre grupos para enriquecerlos. Usa el filtro “Prototipo” para ver cada uno sobre la base común.</div>
+    <div class="note"><b>Horizontes de crecimiento.</b> Marquen cada elemento como H1 (posible hoy), H2 (requiere desarrollo) o H3 (requiere investigación). Los elementos H2 y H3 aparecen en negritas, como en el ejemplo de hospitalización domiciliaria.</div>
+    <div class="note"><b>Mapa de valor.</b> Para la propuesta de valor, comparen su oferta con la de la industria por atributos: qué eliminar o reducir y qué atributos nuevos crear, como hizo Cirque du Soleil frente al circo tradicional.</div>`;
+  const selKey = S.sel ? (S.sel.type==='block'?S.sel.key:(S.items.get(S.sel.id)||{data:{}}).data.block) : null;
+  $('#p-guia').innerHTML=`
+    <div class="objective"><b>Canvas ${g.n}, ${g.label.toLowerCase()}.</b> ${esc(g.obj)}</div>
+    <h3>${esc(g.cuadro)}</h3>${extra}
+    ${GUIDE_ORDER.map(k=>`<div class="guide-block ${selKey===k?'sel':''}"><button data-act="guide-block" data-block="${k}">${esc(BK[k].t)}</button><ul>${Q[st][k].map(q=>`<li>${esc(q)}</li>`).join('')}</ul></div>`).join('')}
+    <p class="muted">Preguntas basadas en Osterwalder (2007), traducidas por Márquez García en “Innovación en modelos de negocio: la metodología de Osterwalder en la práctica”, Revista MBA EAFIT.</p>`;
+}
+
+/* ---------- Datos ---------- */
+function inviteLink(){
+  const c=getCreds(); let url=location.origin+location.pathname+'?sala='+encodeURIComponent(S.room);
+  if(c && !c.fixed) url+='&c='+encodeURIComponent(btoa(JSON.stringify({u:c.u,k:c.k})));
+  return url;
+}
+function renderDatos(){
+  const c=getCreds(); const mem=members(); const onlineNames=new Set([S.me.name,...Object.values(S.online).map(o=>o.name)]);
+  const isFile=location.protocol==='file:';
+  $('#p-datos').innerHTML=`
+    <h3>Conexión</h3>
+    <p>${S.mode==='supabase'?`Trabajando en vivo con <b>${esc((()=>{try{return new URL(c.u).host}catch(e){return ''}})())}</b>.`:'Trabajando solo en este navegador. Para que el equipo colabore desde distintas computadoras, configura Supabase en la pantalla de entrada.'}</p>
+    <div class="row"><button class="btn small" data-act="sql">Ver SQL de las tablas</button>${S.mode!=='supabase'?'<button class="btn small" data-act="logout">Configurar Supabase</button>':''}</div>
+    <h4>Invitar al equipo</h4>
+    <div class="linkbox"><input readonly value="${esc(inviteLink())}" aria-label="Enlace de invitación"><button class="btn small" data-act="copy-invite">Copiar</button></div>
+    <p class="muted">${isFile?'Estás abriendo el archivo desde tu computadora: para que otros usen el enlace, sube el archivo a GitHub Pages u otro hosting. ':''}El enlace lleva el código de la sala${c&&!c.fixed?' y los datos de conexión':''}; quien lo abra solo escribe su nombre.</p>
+    <h4>Equipo en esta sala</h4>
+    <ul class="members">${mem.map(m=>`<li>${avatar(m.data.name,m.data.color,'sm')}<span>${esc(m.data.name)}${m.data.role?` <span class="muted">(${esc(m.data.role)})</span>`:''}</span>${onlineNames.has(m.data.name)?'<span class="on">conectado</span>':''}</li>`).join('')||'<li class="muted">Aún nadie</li>'}</ul>
+    <h4>Entregas al profesor</h4>
+    <div id="entregas"><p class="muted">Cargando…</p></div>
+    <h4>Respaldo</h4>
+    <div class="row">
+      <button class="btn small" data-act="export-json">Descargar respaldo (.json)</button>
+      <label class="btn small">Importar respaldo<input type="file" accept=".json,application/json" data-act="import-json" hidden></label>
+      <button class="btn small" data-act="report-now">Descargar reporte (HTML)</button>
+    </div>
+    <p class="muted">Importar agrega a esta sala los elementos de un respaldo; sirve para pasar a Supabase lo que hicieron sin conexión.</p>
+    <hr class="hr">
+    <button class="btn danger small" data-act="logout">Salir de la sala</button>`;
+  loadEntregas();
+}
+async function loadEntregas(){
+  const box=$('#entregas'); if(!box) return;
+  let list=[];
+  if(S.mode==='supabase'){
+    const {data,error}=await S.sb.from('nevoa_snapshots').select('id,title,created_by,created_at').eq('room',S.room).order('created_at',{ascending:false});
+    if(error){ box.innerHTML=`<p class="muted">${esc(explainError(error))}</p>`; return; }
+    list=data.map(d=>({id:d.id,title:d.title,by:d.created_by,at:d.created_at}));
+  } else {
+    try{ list=JSON.parse(localStorage.getItem('nevoa_entregas_'+S.room)||'[]').map(s=>({id:s.id,title:s.modelName,by:s.createdBy,at:s.createdAt})).reverse(); }catch(e){}
+  }
+  const b=$('#entregas'); if(!b) return;
+  b.innerHTML=list.length?`<ul class="files">${list.map(e=>`<li><a href="?entrega=${encodeURIComponent(e.id)}" target="_blank" rel="noopener">${esc(e.title||'Entrega')}</a><small class="muted">${fmt(e.at)}, ${esc(e.by)}</small></li>`).join('')}</ul>`:'<p class="muted">Todavía no hay entregas. Usen “Guardar y compartir” cuando el canvas esté listo.</p>';
+}
+
+/* ============================ ACCIONES ============================ */
+function selectEl(id){ S.sel={type:'el',id}; if(S.tab!=='detalle') setTab('detalle'); scheduleRender(); }
+function selectBlock(k){ S.sel={type:'block',key:k}; if(S.tab!=='detalle') setTab('detalle'); scheduleRender(); }
+function openAdd(k){
+  const sec=$(`.block[data-block="${k}"]`); const f=sec.querySelector('.add-form'); f.hidden=false; const i=f.querySelector('input'); i.focus();
+}
+function setStage(k){
+  if(S.stage===k) return;
+  S.stage=k; S.sel=null; S.hover=null; S.linkFrom=null; S.proto='all';
+  $$('.add-form').forEach(f=>f.hidden=true);
+  announceStage(); scheduleRender();
+}
+function copyPrev(from){
+  const src=els(from);
+  if(!src.length){ toast('El canvas '+STAGES[from].label+' no tiene elementos para traer.'); return; }
+  const already=els(S.stage).some(e=>e.data.origin);
+  if(!confirm(`Se copiarán ${src.length} elementos y sus relaciones desde ${STAGES[from].label} a ${STAGES[S.stage].label}.${already?' Ya trajeron elementos antes; se duplicarán.':''} ¿Continuar?`)) return;
+  const map={}; const out=[];
+  src.forEach(e=>{ const id=uid('element'); map[e.id]=id; out.push({id,kind:'element',stage:S.stage,author:e.author,data:{block:e.data.block,title:e.data.title,desc:e.data.desc||'',origin:e.id}}); });
+  rels(from).forEach(r=>{ if(map[r.data.from]&&map[r.data.to]) out.push({id:uid('relation'),kind:'relation',stage:S.stage,author:r.author,data:{from:map[r.data.from],to:map[r.data.to],text:r.data.text||''}}); });
+  save(out); toast('Elementos traídos de '+STAGES[from].label+'.');
+}
+function relationModal(fromId,toId,relId){
+  const r=relId?S.items.get(relId):null;
+  const a=S.items.get(r?r.data.from:fromId), b=S.items.get(r?r.data.to:toId); if(!a||!b) return;
+  openModal(`<h3>${r?'Argumento de la relación':'Nueva relación'}</h3>
+    <p><b>${esc(a.data.title)}</b> <span class="muted">(${esc(BK[a.data.block].t)})</span><br>se relaciona con<br><b>${esc(b.data.title)}</b> <span class="muted">(${esc(BK[b.data.block].t)})</span></p>
+    <label class="lbl" for="m-rel">¿Por qué se relacionan? Describe la lógica o la causalidad</label>
+    <textarea id="m-rel" rows="4" maxlength="800" placeholder="Ej. Para atender la demanda por día, el aprovisionador debe habilitar al cliente con rapidez.">${esc(r?r.data.text:'')}</textarea>
+    <div class="modal-actions">${r?'<button class="btn danger" data-m="del">Quitar relación</button>':''}<button class="btn" data-close>Cancelar</button><button class="btn primary" data-m="ok">${r?'Guardar argumento':'Crear relación'}</button></div>`,
+  m=>{
+    m.querySelector('#m-rel').focus();
+    m.querySelector('[data-m=ok]').onclick=()=>{ const t=m.querySelector('#m-rel').value.trim(); if(r) patch(r.id,{text:t}); else create('relation',S.stage,{from:a.id,to:b.id,text:t}); closeModal(); if(S.relMode==='off'){ S.relMode='hover'; } scheduleRender(); };
+    const d=m.querySelector('[data-m=del]'); if(d) d.onclick=()=>{ removeItem(r.id); closeModal(); };
+  });
+}
+function readFile(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); }); }
+async function uploadFile(input){
+  const box=input.closest('.upload'); const file=input.files[0]; input.value=''; if(!file) return;
+  if(file.size>MAX_FILE){ toast(`“${file.name}” pesa ${kb(file.size)}. El límite es 1 MB; comparte un enlace de Drive o similar con “Agregar enlace”.`,true); return; }
+  const dataUrl=await readFile(file);
+  create('file',S.stage,{block:box.dataset.block, elementId:box.dataset.el||null, name:file.name, type:file.type, size:file.size, dataUrl});
+  toast('Archivo adjuntado.');
+}
+function addLink(box){
+  const url=prompt('Pega el enlace (debe empezar con https://)'); if(!url) return;
+  if(!/^https?:\/\//i.test(url.trim())){ toast('El enlace debe empezar con https://',true); return; }
+  const name=prompt('Nombre para mostrar', url.trim())||url.trim();
+  create('file',S.stage,{block:box.dataset.block, elementId:box.dataset.el||null, name, url:url.trim()});
+}
+
+/* ---------- Entrega al profesor ---------- */
+function buildSnap(message){
+  const m=meta().data;
+  return {version:1, id:uid('entrega'), room:S.room, team:m.team||'', modelName:m.modelName||'Modelo de negocio sin título', message:message||'',
+    createdBy:S.me.name, createdAt:now(), members:members().map(x=>({name:x.data.name, role:x.data.role||''})),
+    items:liveAll().filter(i=>i.kind!=='member' && i.kind!=='meta')};
+}
+function deliverModal(){
+  const rows=STAGE_ORDER.map(k=>`<tr><td>${STAGES[k].label}</td><td>${els(k).length}</td><td>${rels(k).length}</td><td>${liveAll().filter(i=>i.kind==='post'&&i.stage===k).length}</td></tr>`).join('');
+  const authors=[...new Set(liveAll().filter(i=>['element','relation','post','comment'].includes(i.kind)).map(i=>i.author))];
+  openModal(`<h3>Guardar y compartir con el profesor</h3>
+    <p>Se guarda una versión fija de los tres canvas (elementos, relaciones, archivos, blog y chat). El equipo puede seguir trabajando después; el profesor verá exactamente esta versión.</p>
+    <table class="stat-table"><tr><th>Canvas</th><th>Elementos</th><th>Relaciones</th><th>Entradas de blog</th></tr>${rows}</table>
+    <p class="muted">Aportaron: ${authors.length?esc(authors.join(', ')):'nadie todavía'}.</p>
+    <label class="lbl" for="m-msg">Mensaje para el profesor (opcional)</label>
+    <textarea id="m-msg" rows="3" maxlength="1000" placeholder="Ej. Adjuntamos la versión final del equipo 3."></textarea>
+    <label class="check"><input type="checkbox" id="m-ok"> Todo el equipo revisó el canvas y está de acuerdo en entregarlo.</label>
+    <div class="modal-actions"><button class="btn" data-close>Cancelar</button><button class="btn gold" data-m="go" disabled>Guardar entrega</button></div>`,
+  m=>{
+    const chk=m.querySelector('#m-ok'), go=m.querySelector('[data-m=go]');
+    chk.onchange=()=>go.disabled=!chk.checked;
+    go.onclick=async()=>{
+      go.disabled=true; go.textContent='Guardando…';
+      const snap=buildSnap(m.querySelector('#m-msg').value.trim());
+      let link=null;
+      if(S.mode==='supabase'){
+        const {error}=await S.sb.from('nevoa_snapshots').insert({id:snap.id, room:S.room, title:snap.modelName, data:snap, created_by:S.me.name});
+        if(error){ toast('No se guardó la entrega. '+explainError(error),true); go.disabled=false; go.textContent='Guardar entrega'; return; }
+        const c=getCreds(); link=location.origin+location.pathname+'?entrega='+encodeURIComponent(snap.id)+(c&&!c.fixed?'&c='+encodeURIComponent(btoa(JSON.stringify({u:c.u,k:c.k}))):'');
+      } else {
+        try{ const arr=JSON.parse(localStorage.getItem('nevoa_entregas_'+S.room)||'[]'); arr.push(snap); localStorage.setItem('nevoa_entregas_'+S.room,JSON.stringify(arr)); }catch(e){ toast('No hubo espacio para guardar la entrega en este navegador; descarga el reporte.',true); }
+      }
+      const dl=[...(meta().data.deliveries||[]), {id:snap.id, at:snap.createdAt, by:S.me.name}];
+      if(S.items.get(metaId())) patch(metaId(),{deliveries:dl});
+      deliveredModal(snap, link);
+    };
+  });
+}
+function deliveredModal(snap, link){
+  openModal(`<h3>Entrega guardada</h3>
+    ${link?`<p>Comparte este enlace con tu profesor. Abre una vista de solo lectura de los tres canvas.</p>
+      <div class="linkbox"><input readonly value="${esc(link)}"><button class="btn small" data-m="copy">Copiar</button></div>
+      ${location.protocol==='file:'?'<p class="note">Este enlace solo funcionará para otros cuando la página esté publicada (por ejemplo, en GitHub Pages).</p>':''}`
+      :`<p class="note">La sala trabaja sin conexión en vivo, así que la entrega quedó solo en este navegador. Descarga el reporte y envíalo a tu profesor.</p>`}
+    <p>También puedes descargar el reporte como archivo HTML para enviarlo por correo o imprimirlo en PDF.</p>
+    <div class="modal-actions">${link?`<a class="btn" href="${esc(link)}" target="_blank" rel="noopener">Abrir vista del profesor</a>`:''}<button class="btn" data-m="dl">Descargar reporte (HTML)</button><button class="btn primary" data-close>Listo</button></div>`,
+  m=>{
+    const cp=m.querySelector('[data-m=copy]'); if(cp) cp.onclick=()=>copyText(link);
+    m.querySelector('[data-m=dl]').onclick=()=>download(`NEVOA_${S.room}_${slug(snap.modelName)||'modelo'}.html`, reportHTML(snap), 'text/html');
+  });
+}
+
+/* ---------- Reporte / vista del profesor ---------- */
+function reportHTML(snap){
+  const its=(snap.items||[]).filter(i=>!i.deleted && i.data);
+  const K=k=>its.filter(i=>i.kind===k).sort(byCreated);
+  const E=K('element'), R=K('relation'), F=K('file'), P=K('post'), C=K('comment'), CH=K('chat');
+  const byId=Object.fromEntries(E.map(e=>[e.id,e]));
+  const fileLink=f=>f.data.url?`<a href="${esc(safeUrl(f.data.url))}" target="_blank" rel="noopener">${esc(f.data.name)}</a>`:`<a href="${esc(safeData(f.data.dataUrl))}" download="${esc(f.data.name)}">${esc(f.data.name)}</a>`;
+  const stageSec=st=>{
+    const e=E.filter(x=>x.stage===st), r=R.filter(x=>x.stage===st), f=F.filter(x=>x.stage===st);
+    const num={}; r.forEach((x,i)=>{ [x.data.from,x.data.to].forEach(id=>{ (num[id]=num[id]||[]).push(i+1); }); });
+    return `<section class="stage"><h2>Canvas ${STAGES[st].n}. ${STAGES[st].label}</h2>
+      <div class="grid">${BLOCKS.map(b=>`<div class="rb ${b.k==='propuesta'?'core':''}" style="grid-area:${b.area}"><h4><span>${b.n}</span> ${b.t}</h4><ul>${e.filter(x=>x.data.block===b.k).map(x=>`<li class="${st==='innovar'&&(x.data.horizon==='H2'||x.data.horizon==='H3')?'strong':''}"><span class="t">${esc(x.data.title)}</span> ${badges(x,st)}${num[x.id]?`<sup>${num[x.id].join(',')}</sup>`:''}${x.data.desc?`<p>${esc(x.data.desc)}</p>`:''}<small>${esc(x.author)}</small></li>`).join('')||'<li class="none">Sin elementos</li>'}</ul>${f.filter(x=>x.data.block===b.k).length?`<div class="fl">Archivos: ${f.filter(x=>x.data.block===b.k).map(fileLink).join(', ')}</div>`:''}</div>`).join('')}</div>
+      ${r.length?`<h3>Relaciones</h3><ol class="rl">${r.map(x=>{ const a=byId[x.data.from], b=byId[x.data.to]; return a&&b?`<li><b>${esc(a.data.title)}</b> (${esc(BK[a.data.block].s)}) con <b>${esc(b.data.title)}</b> (${esc(BK[b.data.block].s)}): ${esc(x.data.text||'sin argumento')}</li>`:''; }).join('')}</ol>`:''}
+      ${P.filter(x=>x.stage===st).length?`<h3>Blog</h3>${P.filter(x=>x.stage===st).map(p=>`<div class="post"><div class="tag">${esc(p.data.block==='general'?'General':BK[p.data.block].t)}</div><b>${esc(p.data.title||'Sin título')}</b><p>${esc(p.data.text)}</p><small>${esc(p.author)}, ${fmt(p.created_at)}</small>${C.filter(c=>c.data.postId===p.id).map(c=>`<div class="cm"><small><b>${esc(c.author)}</b></small> ${esc(c.data.text)}</div>`).join('')}</div>`).join('')}`:''}
+    </section>`;
+  };
+  const css=`:root{--r:#5F7A61;--rd:#435A46;--rs:#E3EADF;--m:#FBF7EE;--p:#FFFDF8;--g:#C29A45;--gd:#8A6822;--gs:#F3E6C4;--k:#34383B;--k2:#62676B;--l:#DCD4C2}
+*{box-sizing:border-box}body{margin:0;background:var(--m);color:var(--k);font:14px/1.5 'Instrument Sans',system-ui,sans-serif}
+header{background:var(--k);color:var(--m);padding:28px 32px}header h1{font:800 44px/1 'Bricolage Grotesque',sans-serif;margin:0 0 6px;letter-spacing:-.02em}
+header p{margin:4px 0;color:#DAD5C8}main{padding:24px 32px;max-width:1300px;margin:0 auto}.msg{border-left:4px solid var(--g);background:var(--p);padding:10px 14px;margin-bottom:16px}
+h2{font:800 26px 'Bricolage Grotesque',sans-serif;margin:30px 0 10px;color:var(--rd)}h3{font:700 17px 'Bricolage Grotesque',sans-serif;margin:18px 0 6px}
+.grid{display:grid;grid-template-columns:repeat(10,1fr);gap:2px;background:var(--k);border:2px solid var(--k);grid-template-areas:"ali ali act act pro pro rel rel seg seg" "ali ali rec rec pro pro can can seg seg" "cos cos cos cos cos ing ing ing ing ing"}
+.rb{background:var(--p);padding:10px;min-width:0}.rb.core{background:var(--rs)}.rb h4{font:700 14px 'Bricolage Grotesque',sans-serif;margin:0 0 6px}.rb h4 span{color:var(--gd)}
+.rb ul{list-style:none;margin:0;padding:0}.rb li{border-left:3px solid var(--r);background:var(--m);padding:4px 6px;margin-bottom:4px;font-size:13px}.rb li.strong .t{font-weight:700}.rb li p{margin:2px 0 0;color:var(--k2);font-size:12px}.rb li small{color:var(--k2);font-size:11px;display:block}.rb li.none{border:0;background:none;color:var(--k2);font-style:italic}
+sup{color:var(--gd);font-weight:700}.fl{font-size:12px;margin-top:6px}.bdg{font-size:10px;font-weight:700;padding:0 4px;border-radius:2px}.bdg.f{background:var(--r);color:var(--p)}.bdg.d{background:var(--g)}.bdg.sc{background:var(--gs)}.bdg.h1{border:1px solid var(--k2)}.bdg.h2{background:var(--gs)}.bdg.h3{background:var(--rs)}.bdg.pr{background:var(--k);color:var(--m)}
+.rl li{margin-bottom:4px}.post{border-top:1.5px solid var(--k);padding:8px 0}.post p{margin:4px 0;white-space:pre-wrap}.post .tag{font-size:12px;color:var(--gd);font-weight:700}.cm{margin-left:14px;border-left:2px solid var(--l);padding-left:8px;font-size:13px}
+.bar{display:flex;gap:10px;margin-top:14px}.bar button{border:0;background:var(--g);color:var(--k);padding:8px 14px;font-weight:700;cursor:pointer;border-radius:3px}
+details{margin-top:24px}summary{cursor:pointer;font-weight:700}.chat p{margin:2px 0}
+@media print{.bar{display:none}body{background:#fff}.stage{break-inside:avoid-page}}
+@media (max-width:800px){.grid{display:block}.rb{margin-bottom:2px}}`;
+  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(snap.modelName)} | Entrega NÉVOA</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Instrument+Sans:wght@400..700&display=swap" rel="stylesheet"><style>${css}</style></head><body>
+<header><p>NÉVOA, entrega al profesor</p><h1>${esc(snap.modelName)}</h1>
+<p>Sala ${esc(snap.room)}${snap.team?', '+esc(snap.team):''}. Guardada por ${esc(snap.createdBy)} el ${esc(new Date(snap.createdAt).toLocaleString('es-MX'))}.</p>
+<p>Integrantes: ${esc((snap.members||[]).map(m=>m.name+(m.role?' ('+m.role+')':'')).join(', ')||'sin registro')}</p>
+<div class="bar"><button onclick="print()">Imprimir o guardar como PDF</button></div></header>
+<main>${snap.message?`<div class="msg"><b>Mensaje del equipo:</b> ${esc(snap.message)}</div>`:''}
+${STAGE_ORDER.map(stageSec).join('')}
+${CH.length?`<details><summary>Conversación del chat (${CH.length} mensajes)</summary><div class="chat">${CH.map(m=>`<p><b>${esc(m.author)}</b> <small>${fmt(m.created_at)}</small>: ${esc(m.data.text)}</p>`).join('')}</div></details>`:''}
+</main></body></html>`;
+}
+async function openReview(id){
+  document.body.innerHTML='<p style="padding:40px;font-family:sans-serif">Cargando la entrega…</p>';
+  let snap=null;
+  const c=getCreds();
+  if(c && window.supabase){
+    const {data,error}=await client(c).from('nevoa_snapshots').select('data').eq('id',id).maybeSingle();
+    if(data) snap=data.data;
+    else if(error){ document.body.innerHTML=`<p style="padding:40px;font-family:sans-serif">${esc(explainError(error))}</p>`; return; }
+  }
+  if(!snap){ try{ Object.keys(localStorage).filter(k=>k.startsWith('nevoa_entregas_')).forEach(k=>{ JSON.parse(localStorage.getItem(k)||'[]').forEach(s=>{ if(s.id===id) snap=s; }); }); }catch(e){} }
+  if(!snap){ document.body.innerHTML='<p style="padding:40px;font-family:sans-serif">No se encontró esta entrega. Pide al equipo un enlace nuevo o el reporte en HTML.</p>'; return; }
+  document.open(); document.write(reportHTML(snap)); document.close();
+}
+
+/* ---------- Respaldo ---------- */
+async function importJSON(input){
+  const file=input.files[0]; input.value=''; if(!file) return;
+  let data; try{ data=JSON.parse(await file.text()); }catch(e){ toast('El archivo no es un respaldo válido de NÉVOA.',true); return; }
+  const src=(Array.isArray(data)?data:(data.items||[])).filter(i=>i && i.id && i.kind && i.data && !i.deleted && i.kind!=='meta' && i.kind!=='member');
+  if(!src.length){ toast('El respaldo no tiene elementos para importar.',true); return; }
+  if(!confirm(`Se agregarán ${src.length} registros a la sala ${S.room}. ¿Continuar?`)) return;
+  const map={}; src.forEach(i=>map[i.id]=uid(i.kind));
+  const out=src.map(i=>{ const d={...i.data}; ['from','to','postId','elementId'].forEach(f=>{ if(d[f] && map[d[f]]) d[f]=map[d[f]]; }); return {id:map[i.id], kind:i.kind, stage:i.stage||null, author:i.author, created_at:i.created_at, data:d}; });
+  for(let i=0;i<out.length;i+=200) await save(out.slice(i,i+200));
+  toast('Respaldo importado.');
+}
+
+/* ============================ MODALES ============================ */
+function openModal(html, onMount, wide){
+  const m=$('#modal'); m.innerHTML=`<div class="modal-card ${wide?'wide':''}" role="dialog" aria-modal="true">${html}</div>`; m.hidden=false;
+  m.onclick=e=>{ if(e.target===m || e.target.closest('[data-close]')) closeModal(); };
+  if(onMount) onMount(m);
+}
+function closeModal(){ const m=$('#modal'); m.hidden=true; m.innerHTML=''; }
+function sqlModal(){
+  openModal(`<h3>SQL de las tablas de NÉVOA</h3>
+    <p>En tu proyecto de Supabase abre <b>SQL Editor</b>, crea una consulta nueva, pega todo este texto y presiona <b>Run</b>. Solo se hace una vez por proyecto. No toca tus otras tablas.</p>
+    <pre>${esc(SQL)}</pre>
+    <div class="modal-actions"><button class="btn" data-m="copy">Copiar SQL</button><button class="btn primary" data-close>Listo</button></div>`,
+  m=>{ m.querySelector('[data-m=copy]').onclick=async()=>{ try{ await navigator.clipboard.writeText(SQL); toast('SQL copiado.'); }catch(e){ toast('Selecciona el texto y cópialo con Ctrl+C.'); } }; }, true);
+}
+
+/* ============================ EVENTOS ============================ */
+let bound=false;
+const typingT={};
+function bindApp(){
+  if(bound) return; bound=true;
+  $('#t-stages').addEventListener('click',e=>{ const b=e.target.closest('[data-stage]'); if(b) setStage(b.dataset.stage); });
+  $('#t-rel').addEventListener('click',e=>{ const b=e.target.closest('[data-rel]'); if(b){ S.relMode=b.dataset.rel; scheduleRender(); } });
+  $('#t-extra').addEventListener('click',e=>{ const b=e.target.closest('[data-proto]'); if(b){ S.proto=b.dataset.proto; scheduleRender(); } });
+  $('#t-model').addEventListener('input',e=>{ clearTimeout(typingT.model); const v=e.target.value; typingT.model=setTimeout(()=>{ if(S.items.get(metaId())) patch(metaId(),{modelName:v.trim()}); else save({id:metaId(),kind:'meta',stage:null,author:S.me.name,data:{modelName:v.trim()}}); },500); });
+  $('#btn-deliver').addEventListener('click',deliverModal);
+  $('#tabs').addEventListener('click',e=>{ const b=e.target.closest('[data-tab]'); if(b) setTab(b.dataset.tab); });
+
+  $('#stagebar').addEventListener('click',e=>{
+    const b=e.target.closest('[data-act]'); if(!b) return;
+    if(b.dataset.act==='cancel-link'){ S.linkFrom=null; scheduleRender(); }
+    if(b.dataset.act==='copy-prev') copyPrev(b.dataset.from);
+  });
+
+  const board=$('#board');
+  board.addEventListener('click',e=>{
+    const dot=e.target.closest('.rel-dot'); if(dot){ relationModal(null,null,dot.dataset.rel); return; }
+    const chip=e.target.closest('.chip');
+    if(chip){
+      if(S.linkFrom){ if(chip.dataset.id!==S.linkFrom){ const from=S.linkFrom; S.linkFrom=null; scheduleRender(); relationModal(from,chip.dataset.id); } return; }
+      selectEl(chip.dataset.id); return;
+    }
+    const act=e.target.closest('[data-act]'); const sec=e.target.closest('.block'); if(!sec) return;
+    if(act && act.dataset.act==='add') openAdd(sec.dataset.block);
+    else if(act && act.dataset.act==='block') selectBlock(sec.dataset.block);
+  });
+  board.addEventListener('keydown',e=>{ const chip=e.target.closest('.chip'); if(chip && (e.key==='Enter'||e.key===' ')){ e.preventDefault(); chip.click(); } });
+  board.addEventListener('submit',e=>{
+    e.preventDefault(); const f=e.target; const sec=f.closest('.block'); const i=f.querySelector('input'); const v=i.value.trim();
+    if(v){ create('element',S.stage,{block:sec.dataset.block,title:v,desc:''}); i.value=''; }
+  });
+  board.addEventListener('keydown',e=>{ if(e.key==='Escape' && e.target.closest('.add-form')){ const f=e.target.closest('.add-form'); f.querySelector('input').value=''; f.hidden=true; } });
+  board.addEventListener('focusout',e=>{ const f=e.target.closest && e.target.closest('.add-form'); if(f) setTimeout(()=>{ const i=f.querySelector('input'); if(document.activeElement!==i && !i.value.trim()) f.hidden=true; },150); });
+  board.addEventListener('mouseover',e=>{ const c=e.target.closest('.chip'); const id=c?c.dataset.id:null; if(id!==S.hover){ S.hover=id; if(S.relMode==='hover') drawRelations(); } });
+  board.addEventListener('mouseleave',()=>{ if(S.hover){ S.hover=null; if(S.relMode==='hover') drawRelations(); } });
+  window.addEventListener('resize',()=>drawRelations());
+
+  const det=$('#p-detalle');
+  det.addEventListener('input',e=>{
+    const f=e.target.dataset.f; if(!f || !S.sel || S.sel.type!=='el') return;
+    const id=S.sel.id, v=e.target.value;
+    if(f==='title' && !v.trim()) return;
+    clearTimeout(typingT[id+f]); typingT[id+f]=setTimeout(()=>patch(id,{[f]:f==='title'?v.trim():v}),450);
+  });
+  det.addEventListener('change',e=>{
+    if(e.target.dataset.act==='file') uploadFile(e.target);
+    if(e.target.dataset.f==='proto' && S.sel) patch(S.sel.id,{proto:e.target.value});
+  });
+  det.addEventListener('click',e=>{
+    const b=e.target.closest('button'); if(!b) return;
+    const sel=S.sel;
+    if(b.dataset.tag!==undefined && sel) patch(sel.id,{tag:b.dataset.tag});
+    else if(b.dataset.score && sel){ const cur=Number((S.items.get(sel.id)||{data:{}}).data.score); const n=Number(b.dataset.score); patch(sel.id,{score:cur===n?null:n}); }
+    else if(b.dataset.hz && sel){ const cur=(S.items.get(sel.id)||{data:{}}).data.horizon; patch(sel.id,{horizon:cur===b.dataset.hz?null:b.dataset.hz}); }
+    const a=b.dataset.act;
+    if(a==='link' && sel){ S.linkFrom=sel.id; scheduleRender(); toast('Ahora haz clic en el elemento destino del tablero.'); }
+    if(a==='del-el' && sel){ const el=S.items.get(sel.id); if(el && confirm(`¿Eliminar “${el.data.title}” y sus relaciones?`)) removeElement(sel.id); }
+    if(a==='del-rel') removeItem(b.dataset.id);
+    if(a==='edit-rel') relationModal(null,null,b.dataset.id);
+    if(a==='del-file'){ if(confirm('¿Quitar este archivo de apoyo?')) removeItem(b.dataset.id); }
+    if(a==='add-link') addLink(b.closest('.upload'));
+    if(a==='add-here') openAdd(b.dataset.block);
+    if(a==='blog-block'){ S.blogFilter=b.dataset.block; $('#blog-block').value=b.dataset.block; setTab('blog'); scheduleRender(); $('#blog-title').focus(); }
+  });
+
+  $('#chat-form').addEventListener('submit',e=>{ e.preventDefault(); const i=$('#chat-input'); const v=i.value.trim(); if(!v) return; create('chat',null,{text:v}); i.value=''; setTimeout(()=>renderChat(true),30); });
+
+  $('#blog-filters').addEventListener('click',e=>{ const b=e.target.closest('[data-bf]'); if(!b) return; S.blogFilter=b.dataset.bf; if(S.blogFilter!=='all') $('#blog-block').value=S.blogFilter; renderBlog(); });
+  $('#blog-all').addEventListener('change',renderBlog);
+  $('#blog-form').addEventListener('submit',e=>{
+    e.preventDefault(); const t=$('#blog-text').value.trim(); if(!t){ toast('Escribe el texto de la entrada.'); $('#blog-text').focus(); return; }
+    create('post',S.stage,{block:$('#blog-block').value, title:$('#blog-title').value.trim(), text:t});
+    $('#blog-title').value=''; $('#blog-text').value=''; toast('Entrada publicada.');
+  });
+  $('#blog-list').addEventListener('submit',e=>{ e.preventDefault(); const f=e.target; const i=f.querySelector('input'); const v=i.value.trim(); if(!v) return; create('comment',null,{postId:f.dataset.post,text:v}); i.value=''; i.blur(); });
+  $('#blog-list').addEventListener('click',e=>{ const b=e.target.closest('[data-act=del-post]'); if(b && confirm('¿Borrar esta entrada del blog?')) removeItem(b.dataset.id); });
+
+  $('#p-guia').addEventListener('click',e=>{ const b=e.target.closest('[data-act=guide-block]'); if(b) selectBlock(b.dataset.block); });
+
+  const dat=$('#p-datos');
+  dat.addEventListener('click',e=>{
+    const b=e.target.closest('[data-act]'); if(!b) return; const a=b.dataset.act;
+    if(a==='sql') sqlModal();
+    if(a==='copy-invite') copyText(inviteLink());
+    if(a==='export-json') download(`NEVOA_${S.room}_respaldo.json`, JSON.stringify({app:'NEVOA',room:S.room,exportedAt:now(),items:liveAll()},null,1),'application/json');
+    if(a==='report-now') download(`NEVOA_${S.room}_reporte.html`, reportHTML(buildSnap('')),'text/html');
+    if(a==='logout'){ if(S.channel && S.sb) S.sb.removeChannel(S.channel); location.href=location.pathname+'?sala='+encodeURIComponent(S.room); }
+  });
+  dat.addEventListener('change',e=>{ if(e.target.dataset.act==='import-json') importJSON(e.target); });
+
+  document.addEventListener('keydown',e=>{
+    if(e.key!=='Escape') return;
+    if(!$('#modal').hidden){ closeModal(); return; }
+    if(S.linkFrom){ S.linkFrom=null; scheduleRender(); }
+  });
+}
+
+/* ============================ INICIO ============================ */
+(function init(){
+  const qs=new URLSearchParams(location.search);
+  const c=qs.get('c');
+  if(c && !(NEVOA_CONFIG.supabaseUrl && NEVOA_CONFIG.supabaseAnonKey)){
+    try{ const o=JSON.parse(atob(c)); if(o.u && o.k) localStorage.setItem('nevoa_creds',JSON.stringify({u:o.u,k:o.k})); }catch(e){}
+  }
+  if(qs.get('entrega')){ openReview(qs.get('entrega')); return; }
+  $('#login-form').addEventListener('submit',enter);
+  $('#btn-creds').addEventListener('click',saveCreds);
+  $('#btn-sql').addEventListener('click',sqlModal);
+  $('#btn-creds-clear').addEventListener('click',()=>{ localStorage.removeItem('nevoa_creds'); $('#f-url').value=''; $('#f-key').value=''; credsStatus(); });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape' && !$('#modal').hidden) closeModal(); });
+  showLogin();
+})();
+</script>
+</body>
+</html>
